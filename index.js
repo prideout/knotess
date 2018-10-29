@@ -110,7 +110,7 @@ export default class Knotess {
     // Given an Alexander-Briggs-Rolfsen identifier and an optional configuration dictionary,
     // returns an array of 'meshes' where each mesh is a dictionary with three entries: a
     // `Float32Array` vertex buffer, a `Uint16Array` triangle buffer, and (optionally) a
-    // `Uint16Array` wireframe buffer.
+    // `Uint16Array` wireframe buffer. The vertex buffer is a flat array of PX PY PZ NX NY NZ.
     tessellate(id, options) {
         const defaults = {
             scale: 0.15,
@@ -136,7 +136,7 @@ export default class Knotess {
     tessellateComponent(component, options) {
         let centerline, faceCount, i, j, lineCount, next, polygonCount;
         let polygonEdge, ptr, rawBuffer, segmentData, sides, sweepEdge, tri, triangles, tube, v;
-        let wireframe;
+        let wireframe = null;
         // Perform Bézier interpolation
         segmentData = this.spines.subarray(component[0] * 3, component[0] * 3 + component[1] * 3);
         centerline = this.getKnotPath(segmentData, options);
@@ -147,32 +147,33 @@ export default class Knotess {
         polygonCount = centerline.length / 3 - 1;
         sides = options.polygonSides;
         lineCount = polygonCount * sides * 2;
-        rawBuffer = new Uint16Array(lineCount * 2);
-        [i, ptr] = [0, 0];
-        while (i < polygonCount * (sides + 1)) {
-            j = 0;
-            while (j < sides) {
-                sweepEdge = rawBuffer.subarray(ptr + 2, ptr + 4);
-                sweepEdge[0] = i + j;
-                sweepEdge[1] = i + j + sides + 1;
-                [ptr, j] = [ptr + 2, j + 1];
+        if (options.wireframe) {
+            rawBuffer = new Uint16Array(lineCount * 2);
+            [i, ptr] = [0, 0];
+            while (i < polygonCount * (sides + 1)) {
+                j = 0;
+                while (j < sides) {
+                    sweepEdge = rawBuffer.subarray(ptr + 2, ptr + 4);
+                    sweepEdge[0] = i + j;
+                    sweepEdge[1] = i + j + sides + 1;
+                    [ptr, j] = [ptr + 2, j + 1];
+                }
+                i += sides + 1;
             }
-            i += sides + 1;
-        }
-        i = 0;
-        while (i < polygonCount * (sides + 1)) {
-            j = 0;
-            while (j < sides) {
-                polygonEdge = rawBuffer.subarray(ptr + 0, ptr + 2);
-                polygonEdge[0] = i + j;
-                polygonEdge[1] = i + j + 1;
-                [ptr, j] = [ptr + 2, j + 1];
+            i = 0;
+            while (i < polygonCount * (sides + 1)) {
+                j = 0;
+                while (j < sides) {
+                    polygonEdge = rawBuffer.subarray(ptr + 0, ptr + 2);
+                    polygonEdge[0] = i + j;
+                    polygonEdge[1] = i + j + 1;
+                    [ptr, j] = [ptr + 2, j + 1];
+                }
+                i += sides + 1;
             }
-            i += sides + 1;
+            wireframe = rawBuffer;
         }
-        wireframe = rawBuffer;
         // Create the index buffer for the solid tube
-        // TODO This can be be re-used from one knot to another
         faceCount = centerline.length / 3 * sides * 2;
         rawBuffer = new Uint16Array(faceCount * 3);
         [i, ptr, v] = [0, 0, 0];
@@ -388,6 +389,7 @@ export default class Knotess {
         vec3.copy(frameR.subarray(0, 3), r0);
         vec3.copy(frameS.subarray(0, 3), s0);
         // Use parallel transport to sweep the frame
+        // TODO: add minor twist so that a swept triangle aligns without cracks.
         [i, j] = [0, 1];
         [ri, si, ti] = [r0, s0, t0];
         while (i < count - 1) {
@@ -411,19 +413,16 @@ export default class Knotess {
 
 vec3.direction = function (vec, vec2, dest) {
     if (!dest) { dest = vec; }
-
     let x = vec[0] - vec2[0],
     y = vec[1] - vec2[1],
     z = vec[2] - vec2[2],
     len = Math.sqrt(x * x + y * y + z * z);
-
     if (!len) {
         dest[0] = 0;
         dest[1] = 0;
         dest[2] = 0;
         return dest;
     }
-
     len = 1 / len;
     dest[0] = x * len;
     dest[1] = y * len;

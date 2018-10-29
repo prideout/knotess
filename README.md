@@ -16,13 +16,10 @@ produces tube shapes by sweeping a polygon along the bézier curve.
 const SPINEDATA = 'centerlines.bin';
 fetch(SPINEDATA).then(res => res.arrayBuffer()).then((data) => {
     const knots = new Knotess(data);
-    const components = knots.tessellate('7.2.3');
-    console.info(components.length);
-    // 2
-    console.info(components[0]);
-    // {vertices: Float32Array(19236), triangles: Uint16Array(11760) }
-    console.info(components[1]);
-    // {vertices: Float32Array(15246), triangles: Uint16Array(13860) }
+    const link = knots.tessellate('7.2.3');
+    const mesh = link[0];
+    const nverts = mesh.vertices.length / 6; // positions and normals
+    console.info(`The first component has ${nverts} vertices.`);
 });
 ```
 

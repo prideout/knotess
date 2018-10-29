@@ -7,6 +7,6 @@ test('smoke', (t) => {
     const knots = new Knotess(data);
     const components = knots.tessellate('7.2.3');
     t.same(components.length, 2);
-    t.same(components[0].vertices.length / 3, 4312);
+    t.same(components[0].vertices.length / 6, 2156);
     t.end();
 });
