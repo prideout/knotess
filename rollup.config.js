@@ -5,9 +5,13 @@ const config = (file, plugins) => ({
     input: 'index.js',
     output: {
         name: 'Knotess',
+        globals: {
+            'gl-matrix': 'vec3'
+        },
         format: 'umd',
         file
     },
+    external: ['gl-matrix'],
     plugins
 });
 

@@ -24,15 +24,14 @@
     "url": "https://github.com/prideout/knotess.git"
   },
   "scripts": {
-    "lint": "eslint index.js test.js bench.js rollup.config.js",
-    "pretest": "npm run lint",
-    "test": "node -r esm test.js",
-    "cov": "c8 node -r esm test.js && c8 report -r html",
-    "bench": "node -r esm bench.js",
+    "disable__lint": "eslint index.js test.js rollup.config.js",
+    "disable__pretest": "npm run lint",
+    "disable__test": "node -r esm test.js",
+    "disable__cov": "c8 node -r esm test.js && c8 report -r html",
     "build": "rollup -c",
     "clean": "rm knotess.*",
-    "start": "rollup -cw",
-    "prepublishOnly": "npm test && npm run build"
+    "watch": "rollup -cw",
+    "disable__prepublishOnly": "npm test && npm run build"
   },
   "files": [
     "knotess.js",

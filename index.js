@@ -1,88 +1,88 @@
+import 'gl-matrix';
+
 const TWOPI = 2 * Math.PI;
 
+const Links = [['0.1'], ['3.1', [3042, 47]], ['4.1', [1375, 69]], ['5.1', [7357, 69]], ['5.2',
+    [1849, 81]], ['6.1', [1534, 96]], ['6.2', [0, 82]], ['6.3', [10652, 85]], ['7.1', [7845,
+    94]], ['7.2', [5595, 86]], ['7.3', [190, 122]], ['7.4', [3640, 102]], ['7.5', [1751,
+    98]], ['7.6', [5020, 102]], ['7.7', [9660, 91]], ['8.1', [1279, 96]], ['8.2', [9751,
+    108]], ['8.3', [2817, 112]], ['8.4', [3938, 105]], ['8.5', [4043, 105]], ['8.6', [4623,
+    90]], ['8.7', [1191, 88]], ['8.8', [5681, 100]], ['8.9', [1930, 98]], ['8.10', [9031,
+    85]], ['8.11', [1444, 90]], ['8.12', [4828, 94]], ['8.13', [6231, 90]], ['8.14', [885,
+    98]], ['8.15', [9574, 86]], ['8.16', [4148, 85]], ['8.17', [312, 81]], ['8.18', [2243,
+    97]], ['8.19', [6321, 86]], ['8.20', [7529, 88]], ['8.21', [686, 89]], ['9.1', [7013,
+    102]], ['9.2', [10544, 108]], ['9.3', [4922, 98]], ['9.4', [3322, 89]], ['9.5', [3411,
+    114]], ['9.6', [8182, 98]], ['9.7', [592, 94]], ['9.8', [10353, 91]], ['9.9', [2140,
+    103]], ['9.10', [8392, 112]], ['9.11', [9349, 120]], ['9.12', [2929, 113]], ['9.13',
+    [9116, 123]], ['9.14', [3089, 102]], ['9.15', [7939, 116]], ['9.16', [5462, 133]],
+    ['9.17', [10242, 111]], ['9.18', [82, 108]], ['9.19', [5122, 118]], ['9.20', [7725,
+    120]], ['9.21', [486, 106]], ['9.22', [1630, 121]], ['9.23', [2436, 113]], ['9.24',
+    [775, 110]], ['9.25', [6601, 102]], ['9.26', [3525, 115]], ['9.27', [6407, 89]],
+    ['9.28', [7426, 103]], ['9.29', [8280, 112]], ['9.30', [5781, 111]], ['9.31', [6703,
+    120]], ['9.32', [8055, 127]], ['9.33', [7227, 130]], ['9.34', [4713, 115]], ['9.35',
+    [3191, 131]], ['9.36', [5240, 119]], ['0.2.1'], ['2.2.1', [2648, 36], [2684, 36]],
+    ['4.2.1', [10161, 39], [10200, 42]], ['5.2.1', [8728, 38], [8766, 39]], ['6.2.1', [8931,
+    49], [8980, 51]], ['6.2.2', [2340, 47], [2387, 49]], ['6.2.3', [3742, 41], [3783, 54]],
+    ['7.2.1', [9859, 44], [9903, 55]], ['7.2.2', [393, 45], [438, 48]], ['7.2.3', [6928,
+    39], [6967, 46]], ['7.2.4', [6496, 77], [6573, 28]], ['7.2.5', [5892, 45], [5937, 68]],
+    ['7.2.6', [6823, 27], [6850, 78]], ['7.2.7', [10057, 78], [10135, 26]], ['7.2.8', [9239,
+    43], [9282, 67]], ['8.2.1', [7115, 58], [7173, 54]], ['8.2.2', [6005, 53], [6058, 59]],
+    ['8.2.3', [8504, 42], [8546, 63]], ['8.2.4', [4357, 50], [4407, 57]], ['8.2.5', [9958,
+    51], [10009, 48]], ['8.2.6', [10444, 46], [10490, 54]], ['8.2.7', [5359, 47], [5406,
+    56]], ['8.2.8', [1097, 50], [1147, 44]], ['8.2.9', [2028, 42], [2070, 70]], ['8.2.10',
+    [4233, 96], [4329, 28]], ['8.2.11', [6117, 93], [6210, 21]], ['0.3.1'], ['6.3.1', [3837,
+    37], [3874, 31], [3905, 33]], ['6.3.2', [9469, 38], [9507, 34], [9541, 33]], ['6.3.3',
+    [2720, 35], [2755, 30], [2785, 32]], ['7.3.1', [7617, 44], [7661, 33], [7694, 31]],
+    ['8.3.1', [8805, 45], [8850, 49], [8899, 32]], ['8.3.2', [8609, 45], [8654, 48], [8702,
+    26]], ['8.3.3', [983, 43], [1026, 36], [1062, 35]], ['8.3.4', [4464, 28], [4492, 29],
+    [4521, 102]], ['8.3.5', [2549, 26], [2575, 29], [2604, 44]]];
+
 function perp(u, dest) {
-    var e, v;
-    v = [1, 0, 0];
+    const v = [1, 0, 0];
     vec3.cross(dest, u, v);
-    e = vec3.dot(dest, dest);
+    const e = vec3.dot(dest, dest);
     if (e < 0.01) {
         vec3.copy(v, [0, 1, 0]);
         vec3.cross(dest, u, v);
     }
     return vec3.normalize(dest, dest);
-};
+}
 
 export default class Knotess {
 
     constructor(centerlines) {
-        console.assert(ArrayBuffer.prototype.constructor == centerlines.constructor);
+        console.assert(ArrayBuffer.prototype.constructor === centerlines.constructor);
         this.spines = new Float32Array(centerlines);
 
         this.KnotColors = [[0.5, 0.75, 1, 0.75], [0.9, 1, 0.9, 0.75], [1, 0.75, 0.5, 0.75]];
 
         this.Rolfsen = [
-            "0.1 3.1 4.1 5.1 5.2 6.1 6.2 6.3 7.1",
-            "7.2 7.3 7.4 7.5 7.6 7.7 8.1 8.2 8.3",
-            "8.4 8.5 8.6 8.7 8.8 8.9 8.10 8.11 8.12",
-            "8.13 8.14 8.15 8.16 8.17 8.18 8.19 8.20 8.21",
-            "9.1 9.2 9.3 9.4 9.5 9.6 9.7 9.8 9.9",
-            "9.10 9.11 9.12 9.13 9.14 9.15 9.16 9.17 9.18",
-            "9.19 9.20 9.21 9.22 9.23 9.24 9.25 9.26 9.27",
-            "9.28 9.29 9.30 9.31 9.32 9.33 9.34 9.35 9.36",
-            "0.2.1 2.2.1 4.2.1 5.2.1 6.2.1 6.2.2 6.2.3 7.2.1 7.2.2",
-            "7.2.3 7.2.4 7.2.5 7.2.6 7.2.7 7.2.8 8.2.1 8.2.2 8.2.3",
-            "8.2.4 8.2.5 8.2.6 8.2.7 8.2.8 8.2.9 8.2.10 8.2.11 0.3.1",
-            "6.3.1 6.3.2 6.3.3 7.3.1 8.3.1 8.3.2 8.3.3 8.3.4 8.3.5"
+            '0.1 3.1 4.1 5.1 5.2 6.1 6.2 6.3 7.1',
+            '7.2 7.3 7.4 7.5 7.6 7.7 8.1 8.2 8.3',
+            '8.4 8.5 8.6 8.7 8.8 8.9 8.10 8.11 8.12',
+            '8.13 8.14 8.15 8.16 8.17 8.18 8.19 8.20 8.21',
+            '9.1 9.2 9.3 9.4 9.5 9.6 9.7 9.8 9.9',
+            '9.10 9.11 9.12 9.13 9.14 9.15 9.16 9.17 9.18',
+            '9.19 9.20 9.21 9.22 9.23 9.24 9.25 9.26 9.27',
+            '9.28 9.29 9.30 9.31 9.32 9.33 9.34 9.35 9.36',
+            '0.2.1 2.2.1 4.2.1 5.2.1 6.2.1 6.2.2 6.2.3 7.2.1 7.2.2',
+            '7.2.3 7.2.4 7.2.5 7.2.6 7.2.7 7.2.8 8.2.1 8.2.2 8.2.3',
+            '8.2.4 8.2.5 8.2.6 8.2.7 8.2.8 8.2.9 8.2.10 8.2.11 0.3.1',
+            '6.3.1 6.3.2 6.3.3 7.3.1 8.3.1 8.3.2 8.3.3 8.3.4 8.3.5'
         ];
 
-        this.Links =
-        [["0.1"], ["3.1", [3042, 47]], ["4.1", [1375, 69]], ["5.1", [7357, 69]], ["5.2",
-        [1849, 81]], ["6.1", [1534, 96]], ["6.2", [0, 82]], ["6.3", [10652, 85]], ["7.1", [7845,
-        94]], ["7.2", [5595, 86]], ["7.3", [190, 122]], ["7.4", [3640, 102]], ["7.5", [1751,
-        98]], ["7.6", [5020, 102]], ["7.7", [9660, 91]], ["8.1", [1279, 96]], ["8.2", [9751,
-        108]], ["8.3", [2817, 112]], ["8.4", [3938, 105]], ["8.5", [4043, 105]], ["8.6", [4623,
-        90]], ["8.7", [1191, 88]], ["8.8", [5681, 100]], ["8.9", [1930, 98]], ["8.10", [9031,
-        85]], ["8.11", [1444, 90]], ["8.12", [4828, 94]], ["8.13", [6231, 90]], ["8.14", [885,
-        98]], ["8.15", [9574, 86]], ["8.16", [4148, 85]], ["8.17", [312, 81]], ["8.18", [2243,
-        97]], ["8.19", [6321, 86]], ["8.20", [7529, 88]], ["8.21", [686, 89]], ["9.1", [7013,
-        102]], ["9.2", [10544, 108]], ["9.3", [4922, 98]], ["9.4", [3322, 89]], ["9.5", [3411,
-        114]], ["9.6", [8182, 98]], ["9.7", [592, 94]], ["9.8", [10353, 91]], ["9.9", [2140,
-        103]], ["9.10", [8392, 112]], ["9.11", [9349, 120]], ["9.12", [2929, 113]], ["9.13",
-        [9116, 123]], ["9.14", [3089, 102]], ["9.15", [7939, 116]], ["9.16", [5462, 133]],
-        ["9.17", [10242, 111]], ["9.18", [82, 108]], ["9.19", [5122, 118]], ["9.20", [7725,
-        120]], ["9.21", [486, 106]], ["9.22", [1630, 121]], ["9.23", [2436, 113]], ["9.24",
-        [775, 110]], ["9.25", [6601, 102]], ["9.26", [3525, 115]], ["9.27", [6407, 89]],
-        ["9.28", [7426, 103]], ["9.29", [8280, 112]], ["9.30", [5781, 111]], ["9.31", [6703,
-        120]], ["9.32", [8055, 127]], ["9.33", [7227, 130]], ["9.34", [4713, 115]], ["9.35",
-        [3191, 131]], ["9.36", [5240, 119]], ["0.2.1"], ["2.2.1", [2648, 36], [2684, 36]],
-        ["4.2.1", [10161, 39], [10200, 42]], ["5.2.1", [8728, 38], [8766, 39]], ["6.2.1", [8931,
-        49], [8980, 51]], ["6.2.2", [2340, 47], [2387, 49]], ["6.2.3", [3742, 41], [3783, 54]],
-        ["7.2.1", [9859, 44], [9903, 55]], ["7.2.2", [393, 45], [438, 48]], ["7.2.3", [6928,
-        39], [6967, 46]], ["7.2.4", [6496, 77], [6573, 28]], ["7.2.5", [5892, 45], [5937, 68]],
-        ["7.2.6", [6823, 27], [6850, 78]], ["7.2.7", [10057, 78], [10135, 26]], ["7.2.8", [9239,
-        43], [9282, 67]], ["8.2.1", [7115, 58], [7173, 54]], ["8.2.2", [6005, 53], [6058, 59]],
-        ["8.2.3", [8504, 42], [8546, 63]], ["8.2.4", [4357, 50], [4407, 57]], ["8.2.5", [9958,
-        51], [10009, 48]], ["8.2.6", [10444, 46], [10490, 54]], ["8.2.7", [5359, 47], [5406,
-        56]], ["8.2.8", [1097, 50], [1147, 44]], ["8.2.9", [2028, 42], [2070, 70]], ["8.2.10",
-        [4233, 96], [4329, 28]], ["8.2.11", [6117, 93], [6210, 21]], ["0.3.1"], ["6.3.1", [3837,
-        37], [3874, 31], [3905, 33]], ["6.3.2", [9469, 38], [9507, 34], [9541, 33]], ["6.3.3",
-        [2720, 35], [2755, 30], [2785, 32]], ["7.3.1", [7617, 44], [7661, 33], [7694, 31]],
-        ["8.3.1", [8805, 45], [8850, 49], [8899, 32]], ["8.3.2", [8609, 45], [8654, 48], [8702,
-        26]], ["8.3.3", [983, 43], [1026, 36], [1062, 35]], ["8.3.4", [4464, 28], [4492, 29],
-        [4521, 102]], ["8.3.5", [2549, 26], [2575, 29], [2604, 44]]];
-
         this.LinksDb = {};
-        for (let link of this.Links) {
+        for (const link of Links) {
             this.LinksDb[link[0]] = link.slice(1);
         }
 
         // for (let key in this.LinksDb) {
-        //     console.log(key + " = " + JSON.stringify(this.LinksDb[key]))
+        //     console.log(key + ' = ' + JSON.stringify(this.LinksDb[key]))
         // }
 
         /*
         createTrivialLinks() {
-            var trivialKnot, trivialLink;
+            let trivialKnot, trivialLink;
             trivialKnot = this.link(8, 1)[0];
             trivialLink = this.link(0, 0); // 0.1.1
             trivialLink.push(clone(trivialKnot));
@@ -108,7 +108,7 @@ export default class Knotess {
     }
 
     // Given an Alexander-Briggs-Rolfsen identifier and an optional configuration dictionary,
-    // returns an array of "meshes" where each mesh is a dictionary with three entries: a
+    // returns an array of 'meshes' where each mesh is a dictionary with three entries: a
     // `Float32Array` vertex buffer, a `Uint16Array` triangle buffer, and (optionally) a
     // `Uint16Array` wireframe buffer.
     tessellate(id, options) {
@@ -134,9 +134,9 @@ export default class Knotess {
     // Consumes [INTEGER, INTEGER]
     // Produces {vertices: Float32Array, triangles: Uint16Array}
     tessellateComponent(component, options) {
-        var centerline, faceCount, i, j, lineCount, next, polygonCount;
-        var polygonEdge, ptr, rawBuffer, segmentData, sides, sweepEdge, tri, triangles, tube, v;
-        var wireframe;
+        let centerline, faceCount, i, j, lineCount, next, polygonCount;
+        let polygonEdge, ptr, rawBuffer, segmentData, sides, sweepEdge, tri, triangles, tube, v;
+        let wireframe;
         // Perform Bézier interpolation
         segmentData = this.spines.subarray(component[0] * 3, component[0] * 3 + component[1] * 3);
         centerline = this.getKnotPath(segmentData, options);
@@ -203,14 +203,14 @@ export default class Knotess {
     // Evaluate a Bézier function for smooth interpolation.
     // Return a Float32Array
     getKnotPath(data, options) {
-        var a, b, c, dt, i, ii, j, k, l, n, p, r, rawBuffer, ref, slices, t, tt, v, v1, v2, v3, v4;
-        var slice;
+        let a, b, c, dt, i, ii, j, k, l, n, p, r, rawBuffer, ref, slices, t, tt, v, v1, v2, v3, v4;
+        let slice;
         slices = options.bézierSlices;
         rawBuffer = new Float32Array(data.length * slices + 3);
         [i, j] = [0, 0];
         while (i < data.length + 3) {
             r = (function() {
-                var k, len, ref, results;
+                let k, len, ref, results;
                 ref = [0, 2, 3, 5, 6, 8];
                 results = [];
                 for (k = 0, len = ref.length; k < len; k++) {
@@ -236,7 +236,7 @@ export default class Knotess {
                 tt = 1 - t;
                 c = [tt * tt * tt, 3 * tt * tt * t, 3 * tt * t * t, t * t * t];
                 p = (function() {
-                    var l, len, ref1, results;
+                    let l, len, ref1, results;
                     ref1 = [v1, v2, v3, v4];
                     results = [];
                     for (l = 0, len = ref1.length; l < len; l++) {
@@ -267,8 +267,8 @@ export default class Knotess {
     // Returns the mesh verts as a Float32Arrays.
     // Repeats the vertex along the seam to allow nice texture coords.
     generateTube(centerline, options) {
-        var B, C, basis, center, count, dtheta, frames, i, m, mesh, n, normal, p, r, theta;
-        var v, x, y, z;
+        let B, C, basis, center, count, dtheta, frames, i, m, mesh, n, normal, p, r, theta;
+        let v, x, y, z;
         n = options.polygonSides;
         dtheta = TWOPI / n;
         frames = this.generateFrames(centerline, options);
@@ -280,7 +280,7 @@ export default class Knotess {
         while (i < count) {
             v = 0;
             basis = (function() {
-                var k, results;
+                let k, results;
                 results = [];
                 for (C = k = 0; k <= 2; C = ++k) {
                     results.push(frames[C].subarray(i * 3, i * 3 + 3));
@@ -288,12 +288,12 @@ export default class Knotess {
                 return results;
             })();
             basis = (function() {
-                var k, len, results;
+                let k, len, results;
                 results = [];
                 for (k = 0, len = basis.length; k < len; k++) {
                     B = basis[k];
                     results.push((function() {
-                        var l, results1;
+                        let l, results1;
                         results1 = [];
                         for (C = l = 0; l <= 2; C = ++l) {
                             results1.push(B[C]);
@@ -346,9 +346,9 @@ export default class Knotess {
 
     // Generate reasonable orthonormal basis vectors for curve in R3.
     // Returns three lists-of-vec3's for the basis vectors.
-    // See "Computation of Rotation Minimizing Frame" by Wang and Jüttler.
+    // See 'Computation of Rotation Minimizing Frame' by Wang and Jüttler.
     generateFrames(centerline, options) {
-        var count, frameR, frameS, frameT, i, j, n, r0, ri, rj, s0, si, sj, t0, ti, tj, xi, xj;
+        let count, frameR, frameS, frameT, i, j, n, r0, ri, rj, s0, si, sj, t0, ti, tj, xi, xj;
         count = centerline.length / 3;
         frameR = new Float32Array(count * 3);
         frameS = new Float32Array(count * 3);
@@ -364,7 +364,7 @@ export default class Knotess {
         }
         // Allocate some temporaries for vector math
         [r0, s0, t0] = (function() {
-            var k, results;
+            let k, results;
             results = [];
             for (n = k = 0; k <= 2; n = ++k) {
                 results.push(vec3.create());
@@ -372,7 +372,7 @@ export default class Knotess {
             return results;
         })();
         [rj, sj, tj] = (function() {
-            var k, results;
+            let k, results;
             results = [];
             for (n = k = 0; k <= 2; n = ++k) {
                 results.push(vec3.create());
@@ -412,7 +412,7 @@ export default class Knotess {
 vec3.direction = function (vec, vec2, dest) {
     if (!dest) { dest = vec; }
 
-    var x = vec[0] - vec2[0],
+    let x = vec[0] - vec2[0],
     y = vec[1] - vec2[1],
     z = vec[2] - vec2[2],
     len = Math.sqrt(x * x + y * y + z * z);

@@ -31,14 +31,10 @@ fetch(SPINEDATA).then(res => res.arrayBuffer()).then((data) => {
 Install with NPM (`npm install knotess`) or Yarn (`yarn add knotess`), then:
 
 ```js
-// import as an ES module
 import Knotess from 'knotess';
-
-// or require in Node / Browserify
-const Knotess = require('knotess');
 ```
 
-Or use a browser build directly as follows. Note the dependency on [glMatrix].
+Or use a browser build directly as follows. Note the external dependency on [glMatrix].
 
 ```html
 <script src="//unpkg.com/gl-matrix@2.8.1/dist/gl-matrix-min.js"></script>
