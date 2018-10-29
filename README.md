@@ -1,16 +1,14 @@
-# Knotess [![badge]](https://travis-ci.org/prideout/knotess)
+<h1>Knotess<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Blue_Figure-Eight_Knot.png"
+align="right" width="128"></h1>
 
-[badge]: https://travis-ci.org/prideout/knotess.svg?branch=master "Build Status"
+[![badge]](https://travis-ci.org/prideout/knotess)
 
-This library generates triangle meshes for all the [prime
-knots](https://en.wikipedia.org/wiki/List_of_prime_knots) in the Rolfsen table. Knotess consumes a
-compact binary file that provides XYZ positions for bézier control points, then produces tube shapes
-by sweeping a polygon along the bézier curve.
+This library generates triangle meshes for all the [prime knots] in the Rolfsen table.
+
+Knotess consumes a compact binary file that provides XYZ positions for bézier control points, then
+produces tube shapes by sweeping a polygon along the bézier curve.
 
 - [Interactive Demo](https://prideout.net/knotess)
-
-<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Blue_Figure-Eight_Knot.png"
-     width="200" />
 
 ## Example
 
@@ -40,11 +38,11 @@ import Knotess from 'knotess';
 const Knotess = require('knotess');
 ```
 
-Or use a browser build directly:
+Or use a browser build directly as follows. Note the dependency on [glMatrix].
 
 ```html
-<script src="https://unpkg.com/knotess@1.0.0/knotess.min.js"></script> <!-- minified build -->
-<script src="https://unpkg.com/knotess@1.0.0/knotess.js"></script> <!-- dev build -->
+<script src="//unpkg.com/gl-matrix@2.8.1/dist/gl-matrix-min.js"></script>
+<script src="//unpkg.com/knotess@1.0.0/knotess.js"></script>
 ```
 
 ## API Reference
@@ -71,3 +69,7 @@ two-tuple corresponds to a *component* and each entry in the dictionary correspo
 
 Array of strings where each string corresponds to a row in the Rolfsen table. Each string is a
 space-delimited list of Alexander-Briggs-Rolfsen identifiers.
+
+[badge]: https://travis-ci.org/prideout/knotess.svg?branch=master "Build Status"
+[prime knots]: https://en.wikipedia.org/wiki/List_of_prime_knots
+[glMatrix]: http://glmatrix.net
