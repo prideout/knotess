@@ -1,12 +1,14 @@
 {
-  "name": "delaunator",
-  "version": "3.0.2",
-  "description": "An incredibly fast JavaScript library for Delaunay triangulation of 2D points",
-  "main": "delaunator.js",
+  "name": "knotess",
+  "version": "1.0.0",
+  "description": "Tessellate mathematical knots in JavaScript",
+  "main": "knotess.js",
   "module": "index.js",
-  "jsdelivr": "delaunator.min.js",
-  "unpkg": "delaunator.min.js",
-  "dependencies": {},
+  "jsdelivr": "knotess.min.js",
+  "unpkg": "knotess.min.js",
+  "dependencies": {
+    "gl-matrix": "^2.8.1"
+  },
   "devDependencies": {
     "c8": "^3.2.0",
     "eslint": "^5.6.0",
@@ -19,22 +21,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mapbox/delaunator.git"
+    "url": "https://github.com/prideout/knotess.git"
   },
   "scripts": {
-    "lint": "eslint index.js test.js bench.js rollup.config.js docs/diagrams.js",
+    "lint": "eslint index.js test.js bench.js rollup.config.js",
     "pretest": "npm run lint",
     "test": "node -r esm test.js",
     "cov": "c8 node -r esm test.js && c8 report -r html",
     "bench": "node -r esm bench.js",
     "build": "rollup -c",
+    "clean": "rm knotess.*",
     "start": "rollup -cw",
     "prepublishOnly": "npm test && npm run build"
   },
   "files": [
-    "index.js",
-    "delaunator.js",
-    "delaunator.min.js"
+    "knotess.js",
+    "knotess.min.js",
+    "centerlines.bin"
   ],
   "eslintConfig": {
     "extends": "mourner",
@@ -43,10 +46,9 @@
     }
   },
   "keywords": [
-    "delaunay triangulation",
     "computational geometry",
-    "algorithms"
+    "knot theory"
   ],
-  "author": "Vladimir Agafonkin",
-  "license": "ISC"
+  "author": "Philip Rideout",
+  "license": "MIT"
 }

@@ -1,22 +1,14 @@
-# Delaunator [![Build Status](https://travis-ci.org/mapbox/delaunator.svg?branch=master)](https://travis-ci.org/mapbox/delaunator) [![](https://img.shields.io/badge/simply-awesome-brightgreen.svg)](https://github.com/mourner/projects)
+# Knotess [![badge]](https://travis-ci.org/prideout/knotess)
 
-An incredibly fast JavaScript library for
-[Delaunay triangulation](https://en.wikipedia.org/wiki/Delaunay_triangulation) of 2D points.
+[badge]: https://travis-ci.org/prideout/knotess.svg?branch=master "Build Status"
 
-- [Interactive Demo](https://mapbox.github.io/delaunator/demo.html)
-- [Guide to data structures](https://mapbox.github.io/delaunator/)
+This library creates triangle meshes for the
+[prime knots](https://en.wikipedia.org/wiki/List_of_prime_knots).
 
-Projects based on Delaunator:
+- [Interactive Demo](https://prideout.net/knotess)
 
-- [d3-delaunay](https://github.com/d3/d3-delaunay) for Voronoi diagrams, search, traversal and rendering.
-- [d3-geo-voronoi](https://github.com/Fil/d3-geo-voronoi) for Delaunay triangulations and Voronoi diagrams on a sphere (e.g. for geographic locations).
-
-Ports to other languages:
-[delaunator-rs](https://github.com/mourner/delaunator-rs) (Rust),
-[fogleman/delaunay](https://github.com/fogleman/delaunay) (Go),
-[delaunator-cpp](https://github.com/delfrrr/delaunator-cpp) (C++).
-
-<img src="delaunator.png" alt="Delaunay triangulation example" width="600" />
+<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Blue_Figure-Eight_Knot.png"
+     width="200" />
 
 ## Example
 
@@ -30,21 +22,21 @@ console.log(delaunay.triangles);
 
 ## Install
 
-Install with NPM (`npm install delaunator`) or Yarn (`yarn add delaunator`), then:
+Install with NPM (`npm install knotess`) or Yarn (`yarn add knotess`), then:
 
 ```js
 // import as an ES module
-import Delaunator from 'delaunator';
+import Knotess from 'knotess';
 
 // or require in Node / Browserify
-const Delaunator = require('delaunator');
+const Knotess = require('knotess');
 ```
 
 Or use a browser build directly:
 
 ```html
-<script src="https://unpkg.com/delaunator@3.0.2/delaunator.min.js"></script> <!-- minified build -->
-<script src="https://unpkg.com/delaunator@3.0.2/delaunator.js"></script> <!-- dev build -->
+<script src="https://unpkg.com/knotess@1.0.0/knotess.min.js"></script> <!-- minified build -->
+<script src="https://unpkg.com/knotess@1.0.0/knotess.js"></script> <!-- dev build -->
 ```
 
 ## API Reference
@@ -95,27 +87,3 @@ A `Uint32Array` array of indices that reference points on the convex hull of the
 
 An array of input coordinates in the form `[x0, y0, x1, y1, ....]`,
 of the type provided in the constructor (or `Float64Array` if you used `Delaunator.from`).
-
-## Performance
-
-Benchmark results against other Delaunay JS libraries
-(`npm run bench` on Macbook Pro Retina 15" 2017, Node v10.10.0):
-
-&nbsp; | uniform 100k | gauss 100k | grid 100k | degen 100k | uniform 1&nbsp;million | gauss 1&nbsp;million | grid 1&nbsp;million | degen 1&nbsp;million
-:-- | --: | --: | --: | --: | --: | --: | --: | --:
-**delaunator** | 82ms | 61ms | 66ms | 25ms | 1.07s | 950ms | 830ms | 278ms
-[faster&#8209;delaunay](https://github.com/Bathlamos/delaunay-triangulation) | 473ms | 411ms | 272ms | 68ms | 4.27s | 4.62s | 4.3s | 810ms
-[incremental&#8209;delaunay](https://github.com/mikolalysenko/incremental-delaunay) | 547ms | 505ms | 172ms | 528ms | 5.9s | 6.08s | 2.11s | 6.09s
-[d3&#8209;voronoi](https://github.com/d3/d3-voronoi) | 972ms | 909ms | 358ms | 720ms | 15.04s | 13.86s | 5.55s | 11.13s
-[delaunay&#8209;fast](https://github.com/ironwallaby/delaunay) | 3.8s | 4s | 12.57s | timeout | 132s | 138s | 399s | timeout
-[delaunay](https://github.com/darkskyapp/delaunay) | 4.85s | 5.73s | 15.05s | timeout | 156s | 178s | 326s | timeout
-[delaunay&#8209;triangulate](https://github.com/mikolalysenko/delaunay-triangulate) | 2.24s | 2.04s | OOM | 1.51s | OOM | OOM | OOM | OOM
-[cdt2d](https://github.com/mikolalysenko/cdt2d) | 45s | 51s | 118s | 17s | timeout | timeout | timeout | timeout
-
-## Papers
-
-The algorithm is based on ideas from the following papers:
-
-- [A simple sweep-line Delaunay triangulation algorithm](http://www.academicpub.org/jao/paperInfo.aspx?paperid=15630), 2013, Liu Yonghe, Feng Jinming and Shao Yuehong
-- [S-hull: a fast radial sweep-hull routine for Delaunay triangulation](http://www.s-hull.org/paper/s_hull.pdf), 2010, David Sinclair
-- [A faster circle-sweep Delaunay triangulation algorithm](http://cglab.ca/~biniaz/papers/Sweep%20Circle.pdf), 2011, Ahmad Biniaz and Gholamhossein Dastghaibyfard

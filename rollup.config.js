@@ -4,7 +4,7 @@ import buble from 'rollup-plugin-buble';
 const config = (file, plugins) => ({
     input: 'index.js',
     output: {
-        name: 'Delaunator',
+        name: 'Knotess',
         format: 'umd',
         file
     },
@@ -14,6 +14,6 @@ const config = (file, plugins) => ({
 const bubleConfig = {transforms: {dangerousForOf: true}};
 
 export default [
-    config('delaunator.js', [buble(bubleConfig)]),
-    config('delaunator.min.js', [terser(), buble(bubleConfig)])
+    config('knotess.js', [buble(bubleConfig)]),
+    config('knotess.min.js', [terser(), buble(bubleConfig)])
 ];
