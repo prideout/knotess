@@ -1,457 +1,363 @@
+export default class Knotess {
 
-const EPSILON = Math.pow(2, -52);
-const EDGE_STACK = new Uint32Array(512);
+    constructor(centerlines) {
+        console.assert(Uint8Array.prototype.constructor == a.constructor);
 
-export default class Delaunator {
+        this.scale = 0.15;
+        this.bézierSlices = 5;
+        this.tangentSmoothness = 3;
+        this.polygonSides = 10;
+        this.radius = 0.07;
 
-    static from(points, getX = defaultGetX, getY = defaultGetY) {
-        const n = points.length;
-        const coords = new Float64Array(n * 2);
+        this.CollapsedSizes = {
+          crossings: 10,
+          numComponents: 5,
+          index: 5
+        };
 
-        for (let i = 0; i < n; i++) {
-            const p = points[i];
-            coords[2 * i] = getX(p);
-            coords[2 * i + 1] = getY(p);
-        }
+        this.ExpandedSizes = {
+          crossings: 100,
+          numComponents: 50,
+          index: 50
+        };
 
-        return new Delaunator(coords);
+        this.KnotColors = [[0.5, 0.75, 1, 0.75], [0.9, 1, 0.9, 0.75], [1, 0.75, 0.5, 0.75]];
+
+        this.Gallery = [
+            "0.1 3.1 4.1 5.1 5.2 6.1 6.2 6.3 7.1",
+            "7.2 7.3 7.4 7.5 7.6 7.7 8.1 8.2 8.3",
+            "8.4 8.5 8.6 8.7 8.8 8.9 8.10 8.11 8.12",
+            "8.13 8.14 8.15 8.16 8.17 8.18 8.19 8.20 8.21",
+            "9.1 9.2 9.3 9.4 9.5 9.6 9.7 9.8 9.9",
+            "9.10 9.11 9.12 9.13 9.14 9.15 9.16 9.17 9.18",
+            "9.19 9.20 9.21 9.22 9.23 9.24 9.25 9.26 9.27",
+            "9.28 9.29 9.30 9.31 9.32 9.33 9.34 9.35 9.36",
+            "0.2.1 2.2.1 4.2.1 5.2.1 6.2.1 6.2.2 6.2.3 7.2.1 7.2.2",
+            "7.2.3 7.2.4 7.2.5 7.2.6 7.2.7 7.2.8 8.2.1 8.2.2 8.2.3",
+            "8.2.4 8.2.5 8.2.6 8.2.7 8.2.8 8.2.9 8.2.10 8.2.11 0.3.1",
+            "6.3.1 6.3.2 6.3.3 7.3.1 8.3.1 8.3.2 8.3.3 8.3.4 8.3.5"
+        ];
+
+        this.Links =
+        [["0.1"], ["3.1", [3042, 47]], ["4.1", [1375, 69]], ["5.1", [7357, 69]], ["5.2",
+        [1849, 81]], ["6.1", [1534, 96]], ["6.2", [0, 82]], ["6.3", [10652, 85]], ["7.1", [7845,
+        94]], ["7.2", [5595, 86]], ["7.3", [190, 122]], ["7.4", [3640, 102]], ["7.5", [1751,
+        98]], ["7.6", [5020, 102]], ["7.7", [9660, 91]], ["8.1", [1279, 96]], ["8.2", [9751,
+        108]], ["8.3", [2817, 112]], ["8.4", [3938, 105]], ["8.5", [4043, 105]], ["8.6", [4623,
+        90]], ["8.7", [1191, 88]], ["8.8", [5681, 100]], ["8.9", [1930, 98]], ["8.10", [9031,
+        85]], ["8.11", [1444, 90]], ["8.12", [4828, 94]], ["8.13", [6231, 90]], ["8.14", [885,
+        98]], ["8.15", [9574, 86]], ["8.16", [4148, 85]], ["8.17", [312, 81]], ["8.18", [2243,
+        97]], ["8.19", [6321, 86]], ["8.20", [7529, 88]], ["8.21", [686, 89]], ["9.1", [7013,
+        102]], ["9.2", [10544, 108]], ["9.3", [4922, 98]], ["9.4", [3322, 89]], ["9.5", [3411,
+        114]], ["9.6", [8182, 98]], ["9.7", [592, 94]], ["9.8", [10353, 91]], ["9.9", [2140,
+        103]], ["9.10", [8392, 112]], ["9.11", [9349, 120]], ["9.12", [2929, 113]], ["9.13",
+        [9116, 123]], ["9.14", [3089, 102]], ["9.15", [7939, 116]], ["9.16", [5462, 133]],
+        ["9.17", [10242, 111]], ["9.18", [82, 108]], ["9.19", [5122, 118]], ["9.20", [7725,
+        120]], ["9.21", [486, 106]], ["9.22", [1630, 121]], ["9.23", [2436, 113]], ["9.24",
+        [775, 110]], ["9.25", [6601, 102]], ["9.26", [3525, 115]], ["9.27", [6407, 89]],
+        ["9.28", [7426, 103]], ["9.29", [8280, 112]], ["9.30", [5781, 111]], ["9.31", [6703,
+        120]], ["9.32", [8055, 127]], ["9.33", [7227, 130]], ["9.34", [4713, 115]], ["9.35",
+        [3191, 131]], ["9.36", [5240, 119]], ["0.2.1"], ["2.2.1", [2648, 36], [2684, 36]],
+        ["4.2.1", [10161, 39], [10200, 42]], ["5.2.1", [8728, 38], [8766, 39]], ["6.2.1", [8931,
+        49], [8980, 51]], ["6.2.2", [2340, 47], [2387, 49]], ["6.2.3", [3742, 41], [3783, 54]],
+        ["7.2.1", [9859, 44], [9903, 55]], ["7.2.2", [393, 45], [438, 48]], ["7.2.3", [6928,
+        39], [6967, 46]], ["7.2.4", [6496, 77], [6573, 28]], ["7.2.5", [5892, 45], [5937, 68]],
+        ["7.2.6", [6823, 27], [6850, 78]], ["7.2.7", [10057, 78], [10135, 26]], ["7.2.8", [9239,
+        43], [9282, 67]], ["8.2.1", [7115, 58], [7173, 54]], ["8.2.2", [6005, 53], [6058, 59]],
+        ["8.2.3", [8504, 42], [8546, 63]], ["8.2.4", [4357, 50], [4407, 57]], ["8.2.5", [9958,
+        51], [10009, 48]], ["8.2.6", [10444, 46], [10490, 54]], ["8.2.7", [5359, 47], [5406,
+        56]], ["8.2.8", [1097, 50], [1147, 44]], ["8.2.9", [2028, 42], [2070, 70]], ["8.2.10",
+        [4233, 96], [4329, 28]], ["8.2.11", [6117, 93], [6210, 21]], ["0.3.1"], ["6.3.1", [3837,
+        37], [3874, 31], [3905, 33]], ["6.3.2", [9469, 38], [9507, 34], [9541, 33]], ["6.3.3",
+        [2720, 35], [2755, 30], [2785, 32]], ["7.3.1", [7617, 44], [7661, 33], [7694, 31]],
+        ["8.3.1", [8805, 45], [8850, 49], [8899, 32]], ["8.3.2", [8609, 45], [8654, 48], [8702,
+        26]], ["8.3.3", [983, 43], [1026, 36], [1062, 35]], ["8.3.4", [4464, 28], [4492, 29],
+        [4521, 102]], ["8.3.5", [2549, 26], [2575, 29], [2604, 44]]];
     }
 
-    constructor(coords) {
-        const n = coords.length >> 1;
-        if (n > 0 && typeof coords[0] !== 'number') throw new Error('Expected coords to contain numbers.');
-
-        this.coords = coords;
-
-        // arrays that will store the triangulation graph
-        const maxTriangles = 2 * n - 5;
-        const triangles = this.triangles = new Uint32Array(maxTriangles * 3);
-        const halfedges = this.halfedges = new Int32Array(maxTriangles * 3);
-
-        // temporary arrays for tracking the edges of the advancing convex hull
-        this._hashSize = Math.ceil(Math.sqrt(n));
-        const hullPrev = this.hullPrev = new Uint32Array(n); // edge to prev edge
-        const hullNext = this.hullNext = new Uint32Array(n); // edge to next edge
-        const hullTri = this.hullTri = new Uint32Array(n); // edge to adjacent triangle
-        const hullHash = new Int32Array(this._hashSize).fill(-1); // angular edge hash
-
-        // populate an array of point indices; calculate input data bbox
-        const ids = new Uint32Array(n);
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
-
-        for (let i = 0; i < n; i++) {
-            const x = coords[2 * i];
-            const y = coords[2 * i + 1];
-            if (x < minX) minX = x;
-            if (y < minY) minY = y;
-            if (x > maxX) maxX = x;
-            if (y > maxY) maxY = y;
-            ids[i] = i;
-        }
-        const cx = (minX + maxX) / 2;
-        const cy = (minY + maxY) / 2;
-
-        let minDist = Infinity;
-        let i0, i1, i2;
-
-        // pick a seed point close to the center
-        for (let i = 0; i < n; i++) {
-            const d = dist(cx, cy, coords[2 * i], coords[2 * i + 1]);
-            if (d < minDist) {
-                i0 = i;
-                minDist = d;
-            }
-        }
-        const i0x = coords[2 * i0];
-        const i0y = coords[2 * i0 + 1];
-
-        minDist = Infinity;
-
-        // find the point closest to the seed
-        for (let i = 0; i < n; i++) {
-            if (i === i0) continue;
-            const d = dist(i0x, i0y, coords[2 * i], coords[2 * i + 1]);
-            if (d < minDist && d > 0) {
-                i1 = i;
-                minDist = d;
-            }
-        }
-        let i1x = coords[2 * i1];
-        let i1y = coords[2 * i1 + 1];
-
-        let minRadius = Infinity;
-
-        // find the third point which forms the smallest circumcircle with the first two
-        for (let i = 0; i < n; i++) {
-            if (i === i0 || i === i1) continue;
-            const r = circumradius(i0x, i0y, i1x, i1y, coords[2 * i], coords[2 * i + 1]);
-            if (r < minRadius) {
-                i2 = i;
-                minRadius = r;
-            }
-        }
-        let i2x = coords[2 * i2];
-        let i2y = coords[2 * i2 + 1];
-
-        if (minRadius === Infinity) {
-            throw new Error('No Delaunay triangulation exists for this input.');
-        }
-
-        // swap the order of the seed points for counter-clockwise orientation
-        if (orient(i0x, i0y, i1x, i1y, i2x, i2y)) {
-            const i = i1;
-            const x = i1x;
-            const y = i1y;
-            i1 = i2;
-            i1x = i2x;
-            i1y = i2y;
-            i2 = i;
-            i2x = x;
-            i2y = y;
-        }
-
-        const center = circumcenter(i0x, i0y, i1x, i1y, i2x, i2y);
-        this._cx = center.x;
-        this._cy = center.y;
-
-        const dists = new Float64Array(n);
-        for (let i = 0; i < n; i++) {
-            dists[i] = dist(coords[2 * i], coords[2 * i + 1], center.x, center.y);
-        }
-
-        // sort the points by distance from the seed triangle circumcenter
-        quicksort(ids, dists, 0, n - 1);
-
-        // set up the seed triangle as the starting hull
-        this.hullStart = i0;
-        let hullSize = 3;
-
-        hullNext[i0] = hullPrev[i2] = i1;
-        hullNext[i1] = hullPrev[i0] = i2;
-        hullNext[i2] = hullPrev[i1] = i0;
-
-        hullTri[i0] = 0;
-        hullTri[i1] = 1;
-        hullTri[i2] = 2;
-
-        hullHash[this._hashKey(i0x, i0y)] = i0;
-        hullHash[this._hashKey(i1x, i1y)] = i1;
-        hullHash[this._hashKey(i2x, i2y)] = i2;
-
-        this.trianglesLen = 0;
-        this._addTriangle(i0, i1, i2, -1, -1, -1);
-
-        for (let k = 0, xp, yp; k < ids.length; k++) {
-            const i = ids[k];
-            const x = coords[2 * i];
-            const y = coords[2 * i + 1];
-
-            // skip near-duplicate points
-            if (k > 0 && Math.abs(x - xp) <= EPSILON && Math.abs(y - yp) <= EPSILON) continue;
-            xp = x;
-            yp = y;
-
-            // skip seed triangle points
-            if (i === i0 || i === i1 || i === i2) continue;
-
-            // find a visible edge on the convex hull using edge hash
-            let start = 0;
-            for (let j = 0, key = this._hashKey(x, y); j < this._hashSize; j++) {
-                start = hullHash[(key + j) % this._hashSize];
-                if (start !== -1 && start !== hullNext[start]) break;
-            }
-
-            start = hullPrev[start];
-            let e = start, q;
-            while (q = hullNext[e], !orient(x, y, coords[2 * e], coords[2 * e + 1], coords[2 * q], coords[2 * q + 1])) {
-                e = q;
-                if (e === start) {
-                    e = -1;
-                    break;
+    // Evaluate a Bézier function for smooth interpolation.
+    // Return a Float32Array
+    getKnotPath(data) {
+        var a, b, c, dt, i, ii, j, k, l, n, p, r, rawBuffer, ref, slice, slices, t, tt, v, v1, v2, v3, v4;
+        slices = this.bézierSlices;
+        rawBuffer = new Float32Array(data.length * slices + 3);
+        [i, j] = [0, 0];
+        while (i < data.length + 3) {
+            r = (function() {
+                var k, len, ref, results;
+                ref = [0, 2, 3, 5, 6, 8];
+                results = [];
+                for (k = 0, len = ref.length; k < len; k++) {
+                    n = ref[k];
+                    results.push((i + n) % data.length);
                 }
-            }
-            if (e === -1) continue; // likely a near-duplicate point; skip it
-
-            // add the first triangle from the point
-            let t = this._addTriangle(e, i, hullNext[e], -1, -1, hullTri[e]);
-
-            // recursively flip triangles from the point until they satisfy the Delaunay condition
-            hullTri[i] = this._legalize(t + 2);
-            hullTri[e] = t; // keep track of boundary triangles on the hull
-            hullSize++;
-
-            // walk forward through the hull, adding more triangles and flipping recursively
-            let n = hullNext[e];
-            while (q = hullNext[n], orient(x, y, coords[2 * n], coords[2 * n + 1], coords[2 * q], coords[2 * q + 1])) {
-                t = this._addTriangle(n, i, q, hullTri[i], -1, hullTri[n]);
-                hullTri[i] = this._legalize(t + 2);
-                hullNext[n] = n; // mark as removed
-                hullSize--;
-                n = q;
-            }
-
-            // walk backward from the other side, adding more triangles and flipping
-            if (e === start) {
-                while (q = hullPrev[e], orient(x, y, coords[2 * q], coords[2 * q + 1], coords[2 * e], coords[2 * e + 1])) {
-                    t = this._addTriangle(q, i, e, -1, hullTri[e], hullTri[q]);
-                    this._legalize(t + 2);
-                    hullTri[q] = t;
-                    hullNext[e] = e; // mark as removed
-                    hullSize--;
-                    e = q;
+                return results;
+            })();
+            a = data.subarray(r[0], r[1] + 1);
+            b = data.subarray(r[2], r[3] + 1);
+            c = data.subarray(r[4], r[5] + 1);
+            v1 = vec3.clone(a);
+            v4 = vec3.clone(b);
+            vec3.lerp(v1, v1, b, 0.5);
+            vec3.lerp(v4, v4, c, 0.5);
+            v2 = vec3.clone(v1);
+            v3 = vec3.clone(v4);
+            vec3.lerp(v2, v2, b, 1 / 3);
+            vec3.lerp(v3, v3, b, 1 / 3);
+            t = dt = 1 / (slices + 1);
+            for (slice = k = 0, ref = slices; (0 <= ref ? k < ref : k > ref); slice = 0 <= ref ? ++k : --k) {
+                tt = 1 - t;
+                c = [tt * tt * tt, 3 * tt * tt * t, 3 * tt * t * t, t * t * t];
+                p = (function() {
+                    var l, len, ref1, results;
+                    ref1 = [v1, v2, v3, v4];
+                    results = [];
+                    for (l = 0, len = ref1.length; l < len; l++) {
+                        v = ref1[l];
+                        results.push(vec3.clone(v));
+                    }
+                    return results;
+                })();
+                for (ii = l = 0; l < 4; ii = ++l) {
+                    vec3.scale(p[ii], p[ii], c[ii]);
                 }
+                p = p.reduce(function(a, b) {
+                    return vec3.add(a, a, b);
+                });
+                vec3.scale(p, p, this.scale);
+                rawBuffer.set(p, j);
+                j += 3;
+                if (j >= rawBuffer.length) {
+                    return rawBuffer;
+                }
+                t += dt;
             }
-
-            // update the hull indices
-            this.hullStart = hullPrev[i] = e;
-            hullNext[e] = hullPrev[n] = i;
-            hullNext[i] = n;
-
-            // save the two new edges in the hash table
-            hullHash[this._hashKey(x, y)] = i;
-            hullHash[this._hashKey(coords[2 * e], coords[2 * e + 1])] = e;
+            i += 3;
         }
-
-        this.hull = new Uint32Array(hullSize);
-        for (let i = 0, e = this.hullStart; i < hullSize; i++) {
-            this.hull[i] = e;
-            e = hullNext[e];
-        }
-        this.hullPrev = this.hullNext = this.hullTri = null; // get rid of temporary arrays
-
-        // trim typed triangle mesh arrays
-        this.triangles = triangles.subarray(0, this.trianglesLen);
-        this.halfedges = halfedges.subarray(0, this.trianglesLen);
     }
 
-    _hashKey(x, y) {
-        return Math.floor(pseudoAngle(x - this._cx, y - this._cy) * this._hashSize) % this._hashSize;
-    }
-
-    _legalize(a) {
-        const {triangles, coords, halfedges} = this;
-
-        let i = 0;
-        let ar = 0;
-
-        // recursion eliminated with a fixed-size stack
-        while (true) {
-            const b = halfedges[a];
-
-            /* if the pair of triangles doesn't satisfy the Delaunay condition
-             * (p1 is inside the circumcircle of [p0, pl, pr]), flip them,
-             * then do the same check/flip recursively for the new pair of triangles
-             *
-             *           pl                    pl
-             *          /||\                  /  \
-             *       al/ || \bl            al/    \a
-             *        /  ||  \              /      \
-             *       /  a||b  \    flip    /___ar___\
-             *     p0\   ||   /p1   =>   p0\---bl---/p1
-             *        \  ||  /              \      /
-             *       ar\ || /br             b\    /br
-             *          \||/                  \  /
-             *           pr                    pr
-             */
-            const a0 = a - a % 3;
-            ar = a0 + (a + 2) % 3;
-
-            if (b === -1) { // convex hull edge
-                if (i === 0) break;
-                a = EDGE_STACK[--i];
-                continue;
-            }
-
-            const b0 = b - b % 3;
-            const al = a0 + (a + 1) % 3;
-            const bl = b0 + (b + 2) % 3;
-
-            const p0 = triangles[ar];
-            const pr = triangles[a];
-            const pl = triangles[al];
-            const p1 = triangles[bl];
-
-            const illegal = inCircle(
-                coords[2 * p0], coords[2 * p0 + 1],
-                coords[2 * pr], coords[2 * pr + 1],
-                coords[2 * pl], coords[2 * pl + 1],
-                coords[2 * p1], coords[2 * p1 + 1]);
-
-            if (illegal) {
-                triangles[a] = p1;
-                triangles[b] = p0;
-
-                const hbl = halfedges[bl];
-
-                // edge swapped on the other side of the hull (rare); fix the halfedge reference
-                if (hbl === -1) {
-                    let e = this.hullStart;
-                    do {
-                        if (this.hullTri[e] === bl) {
-                            this.hullTri[e] = a;
-                            break;
+    // Sweep a n-sided polygon along the given centerline.
+    // Returns the mesh verts as a Float32Arrays.
+    // Repeats the vertex along the seam to allow nice texture coords.
+    generateTube(centerline) {
+        var B, C, basis, center, count, dtheta, frames, i, m, mesh, n, normal, p, r, theta, v, x, y, z;
+        n = this.polygonSides;
+        dtheta = TWOPI / n;
+        frames = this.generateFrames(centerline);
+        count = centerline.length / 3;
+        mesh = new Float32Array(count * (n + 1) * 6);
+        [i, m] = [0, 0];
+        p = vec3.create();
+        r = this.radius;
+        while (i < count) {
+            v = 0;
+            basis = (function() {
+                var k, results;
+                results = [];
+                for (C = k = 0; k <= 2; C = ++k) {
+                    results.push(frames[C].subarray(i * 3, i * 3 + 3));
+                }
+                return results;
+            })();
+            basis = (function() {
+                var k, len, results;
+                results = [];
+                for (k = 0, len = basis.length; k < len; k++) {
+                    B = basis[k];
+                    results.push((function() {
+                        var l, results1;
+                        results1 = [];
+                        for (C = l = 0; l <= 2; C = ++l) {
+                            results1.push(B[C]);
                         }
-                        e = this.hullNext[e];
-                    } while (e !== this.hullStart);
+                        return results1;
+                    })());
                 }
-                this._link(a, hbl);
-                this._link(b, halfedges[ar]);
-                this._link(ar, bl);
-
-                const br = b0 + (b + 1) % 3;
-
-                // don't worry about hitting the cap: it can only happen on extremely degenerate input
-                if (i < EDGE_STACK.length) {
-                    EDGE_STACK[i++] = br;
-                }
-            } else {
-                if (i === 0) break;
-                a = EDGE_STACK[--i];
+                return results;
+            })();
+            basis = basis.reduce(function(A, B) {
+                return A.concat(B);
+            });
+            theta = 0;
+            while (v < n + 1) {
+                x = r * cos(theta);
+                y = r * sin(theta);
+                z = 0;
+                vec3.transformMat3(p, [x, y, z], basis);
+                p[0] += centerline[i * 3 + 0];
+                p[1] += centerline[i * 3 + 1];
+                p[2] += centerline[i * 3 + 2];
+                // Stamp p into 'm', skipping over the normal:
+                mesh.set(p, m);
+                [m, v, theta] = [m + 6, v + 1, theta + dtheta];
             }
+            i++;
         }
-
-        return ar;
+        // Next, populate normals:
+        [i, m] = [0, 0];
+        normal = vec3.create();
+        center = vec3.create();
+        while (i < count) {
+            v = 0;
+            while (v < n + 1) {
+                p[0] = mesh[m + 0];
+                p[1] = mesh[m + 1];
+                p[2] = mesh[m + 2];
+                center[0] = centerline[i * 3 + 0];
+                center[1] = centerline[i * 3 + 1];
+                center[2] = centerline[i * 3 + 2];
+                vec3.direction(p, center, normal);
+                // Stamp n into 'm', skipping over the position:
+                mesh.set(normal, m + 3);
+                [m, v] = [m + 6, v + 1];
+            }
+            i++;
+        }
+        return mesh;
     }
 
-    _link(a, b) {
-        this.halfedges[a] = b;
-        if (b !== -1) this.halfedges[b] = a;
+    // Generate reasonable orthonormal basis vectors for curve in R3.
+    // Returns three lists-of-vec3's for the basis vectors.
+    // See "Computation of Rotation Minimizing Frame" by Wang and Jüttler.
+    generateFrames(centerline) {
+        var count, frameR, frameS, frameT, i, j, n, r0, ri, rj, s0, si, sj, t0, ti, tj, xi, xj;
+        count = centerline.length / 3;
+        frameR = new Float32Array(count * 3);
+        frameS = new Float32Array(count * 3);
+        frameT = new Float32Array(count * 3);
+        // Obtain unit-length tangent vectors
+        i = -1;
+        while (++i < count) {
+            j = (i + 1 + this.tangentSmoothness) % (count - 1);
+            xi = centerline.subarray(i * 3, i * 3 + 3);
+            xj = centerline.subarray(j * 3, j * 3 + 3);
+            ti = frameT.subarray(i * 3, i * 3 + 3);
+            vec3.direction(xi, xj, ti);
+        }
+        // Allocate some temporaries for vector math
+        [r0, s0, t0] = (function() {
+            var k, results;
+            results = [];
+            for (n = k = 0; k <= 2; n = ++k) {
+                results.push(vec3.create());
+            }
+            return results;
+        })();
+        [rj, sj, tj] = (function() {
+            var k, results;
+            results = [];
+            for (n = k = 0; k <= 2; n = ++k) {
+                results.push(vec3.create());
+            }
+            return results;
+        })();
+        // Create a somewhat-arbitrary initial frame (r0, s0, t0)
+        vec3.copy(t0, frameT.subarray(0, 3));
+        perp(t0, r0);
+        vec3.cross(s0, t0, r0);
+        vec3.normalize(r0, r0);
+        vec3.normalize(s0, s0);
+        vec3.copy(frameR.subarray(0, 3), r0);
+        vec3.copy(frameS.subarray(0, 3), s0);
+        // Use parallel transport to sweep the frame
+        [i, j] = [0, 1];
+        [ri, si, ti] = [r0, s0, t0];
+        while (i < count - 1) {
+            j = i + 1;
+            xi = centerline.subarray(i * 3, i * 3 + 3);
+            xj = centerline.subarray(j * 3, j * 3 + 3);
+            ti = frameT.subarray(i * 3, i * 3 + 3);
+            tj = frameT.subarray(j * 3, j * 3 + 3);
+            vec3.cross(sj, tj, ri);
+            vec3.normalize(sj, sj);
+            vec3.cross(rj, sj, tj);
+            vec3.copy(frameR.subarray(j * 3, j * 3 + 3), rj);
+            vec3.copy(frameS.subarray(j * 3, j * 3 + 3), sj);
+            vec3.copy(ri, rj);
+            ++i;
+        }
+        // Return the basis columns
+        return [frameR, frameS, frameT];
     }
 
-    // add a new triangle given vertex indices and adjacent half-edge ids
-    _addTriangle(i0, i1, i2, a, b, c) {
-        const t = this.trianglesLen;
-
-        this.triangles[t] = i0;
-        this.triangles[t + 1] = i1;
-        this.triangles[t + 2] = i2;
-
-        this._link(t, a);
-        this._link(t + 1, b);
-        this._link(t + 2, c);
-
-        this.trianglesLen += 3;
-
-        return t;
-    }
-}
-
-// monotonically increases with real angle, but doesn't need expensive trigonometry
-function pseudoAngle(dx, dy) {
-    const p = dx / (Math.abs(dx) + Math.abs(dy));
-    return (dy > 0 ? 3 - p : 1 + p) / 4; // [0..1]
-}
-
-function dist(ax, ay, bx, by) {
-    const dx = ax - bx;
-    const dy = ay - by;
-    return dx * dx + dy * dy;
-}
-
-function orient(px, py, qx, qy, rx, ry) {
-    return (qy - py) * (rx - qx) - (qx - px) * (ry - qy) < 0;
-}
-
-function inCircle(ax, ay, bx, by, cx, cy, px, py) {
-    const dx = ax - px;
-    const dy = ay - py;
-    const ex = bx - px;
-    const ey = by - py;
-    const fx = cx - px;
-    const fy = cy - py;
-
-    const ap = dx * dx + dy * dy;
-    const bp = ex * ex + ey * ey;
-    const cp = fx * fx + fy * fy;
-
-    return dx * (ey * cp - bp * fy) -
-           dy * (ex * cp - bp * fx) +
-           ap * (ex * fy - ey * fx) < 0;
-}
-
-function circumradius(ax, ay, bx, by, cx, cy) {
-    const dx = bx - ax;
-    const dy = by - ay;
-    const ex = cx - ax;
-    const ey = cy - ay;
-
-    const bl = dx * dx + dy * dy;
-    const cl = ex * ex + ey * ey;
-    const d = 0.5 / (dx * ey - dy * ex);
-
-    const x = (ey * bl - dy * cl) * d;
-    const y = (dx * cl - ex * bl) * d;
-
-    return x * x + y * y;
-}
-
-function circumcenter(ax, ay, bx, by, cx, cy) {
-    const dx = bx - ax;
-    const dy = by - ay;
-    const ex = cx - ax;
-    const ey = cy - ay;
-
-    const bl = dx * dx + dy * dy;
-    const cl = ex * ex + ey * ey;
-    const d = 0.5 / (dx * ey - dy * ex);
-
-    const x = ax + (ey * bl - dy * cl) * d;
-    const y = ay + (dx * cl - ex * bl) * d;
-
-    return {x, y};
-}
-
-function quicksort(ids, dists, left, right) {
-    if (right - left <= 20) {
-        for (let i = left + 1; i <= right; i++) {
-            const temp = ids[i];
-            const tempDist = dists[temp];
-            let j = i - 1;
-            while (j >= left && dists[ids[j]] > tempDist) ids[j + 1] = ids[j--];
-            ids[j + 1] = temp;
-        }
-    } else {
-        const median = (left + right) >> 1;
-        let i = left + 1;
-        let j = right;
-        swap(ids, median, i);
-        if (dists[ids[left]] > dists[ids[right]]) swap(ids, left, right);
-        if (dists[ids[i]] > dists[ids[right]]) swap(ids, i, right);
-        if (dists[ids[left]] > dists[ids[i]]) swap(ids, left, i);
-
-        const temp = ids[i];
-        const tempDist = dists[temp];
-        while (true) {
-            do i++; while (dists[ids[i]] < tempDist);
-            do j--; while (dists[ids[j]] > tempDist);
-            if (j < i) break;
-            swap(ids, i, j);
-        }
-        ids[left + 1] = ids[j];
-        ids[j] = temp;
-
-        if (right - i + 1 >= j - left) {
-            quicksort(ids, dists, i, right);
-            quicksort(ids, dists, left, j - 1);
-        } else {
-            quicksort(ids, dists, left, j - 1);
-            quicksort(ids, dists, i, right);
-        }
+    createTrivialLinks() {
+        var trivialKnot, trivialLink;
+        trivialKnot = this.link(8, 1)[0];
+        trivialLink = this.link(0, 0); // 0.1.1
+        trivialLink.push(clone(trivialKnot));
+        trivialLink[0].offset = [0.5, -0.25, 0];
+        trivialLink.hidden = true;
+        trivialLink = this.link(8, 0); // 0.2.1
+        trivialLink.push(clone(trivialKnot));
+        trivialLink.push(clone(trivialKnot));
+        trivialLink[0].offset = [0, 0, 0];
+        trivialLink[1].color = metadata.KnotColors[1];
+        trivialLink[1].offset = [0.5, 0, 0];
+        trivialLink = this.link(10, 8); // 0.3.1
+        trivialLink.push(clone(trivialKnot));
+        trivialLink.push(clone(trivialKnot));
+        trivialLink.push(clone(trivialKnot));
+        trivialLink[0].offset = [0, 0, 0];
+        trivialLink[1].color = metadata.KnotColors[1];
+        trivialLink[1].offset = [0.5, 0, 0];
+        trivialLink[2].color = metadata.KnotColors[2];
+        return trivialLink[2].offset = [1.0, 0, 0];
     }
 }
 
-function swap(arr, i, j) {
-    const tmp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = tmp;
-}
+vec3.direction = function (vec, vec2, dest) {
+    if (!dest) { dest = vec; }
 
-function defaultGetX(p) {
-    return p[0];
-}
-function defaultGetY(p) {
-    return p[1];
-}
+    var x = vec[0] - vec2[0],
+    y = vec[1] - vec2[1],
+    z = vec[2] - vec2[2],
+    len = Math.sqrt(x * x + y * y + z * z);
+
+    if (!len) {
+        dest[0] = 0;
+        dest[1] = 0;
+        dest[2] = 0;
+        return dest;
+    }
+
+    len = 1 / len;
+    dest[0] = x * len;
+    dest[1] = y * len;
+    dest[2] = z * len;
+    return dest;
+};
+
+TWOPI = 2 * Math.PI;
+
+[sin, cos, pow, abs] = (function() {
+    var k, len, ref, results;
+    ref = "sin cos pow abs".split(' ');
+    results = [];
+    for (k = 0, len = ref.length; k < len; k++) {
+        f = ref[k];
+        results.push(Math[f]);
+    }
+    return results;
+})();
+
+sgn = function(x) {
+    if (x > 0) {
+        return +1;
+    }
+    if (x < 0) {
+        return -1;
+    }
+    return 0;
+};
+
+perp = function(u, dest) {
+    var e, v;
+    v = [1, 0, 0];
+    vec3.cross(dest, u, v);
+    e = vec3.dot(dest, dest);
+    if (e < 0.01) {
+        vec3.copy(v, [0, 1, 0]);
+        vec3.cross(dest, u, v);
+    }
+    return vec3.normalize(dest, dest);
+};
