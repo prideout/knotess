@@ -1,5 +1,4 @@
-<h1>Knotess<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Blue_Figure-Eight_Knot.png"
-align="right" width="128"></h1>
+<h1>Knotess<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Blue_Figure-Eight_Knot.png" align="right" width="128"></h1>
 
 [![badge]](https://travis-ci.org/prideout/knotess)
 
