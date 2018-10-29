@@ -2,8 +2,10 @@
 
 [badge]: https://travis-ci.org/prideout/knotess.svg?branch=master "Build Status"
 
-This library creates triangle meshes for the
-[prime knots](https://en.wikipedia.org/wiki/List_of_prime_knots).
+This library generates triangle meshes for all the [prime
+knots](https://en.wikipedia.org/wiki/List_of_prime_knots) in the Rolfsen table. Knotess consumes a
+compact binary file that provides XYZ positions for bézier control points, then produces tube shapes
+by sweeping a polygon along the bézier curve.
 
 - [Interactive Demo](https://prideout.net/knotess)
 
@@ -13,11 +15,17 @@ This library creates triangle meshes for the
 ## Example
 
 ```js
-const points = [[168, 180], [168, 178], [168, 179], [168, 181], [168, 183], ...];
-
-const delaunay = Delaunator.from(points);
-console.log(delaunay.triangles);
-// [623, 636, 619,  636, 444, 619, ...]
+const SPINEDATA = 'centerlines.bin';
+fetch(SPINEDATA).then(res => res.arrayBuffer()).then((data) => {
+    const knots = new Knotess(data);
+    const components = knots.tessellate('7.2.3');
+    console.info(components.length);
+    // 2
+    console.info(components[0]);
+    // {vertices: Float32Array(19236), triangles: Uint16Array(11760) }
+    console.info(components[1]);
+    // {vertices: Float32Array(15246), triangles: Uint16Array(13860) }
+});
 ```
 
 ## Install
@@ -41,49 +49,25 @@ Or use a browser build directly:
 
 ## API Reference
 
-#### Delaunator.from(points[, getX, getY])
+#### new Knotess(ArrayBuffer)
 
-Constructs a delaunay triangulation object given an array of points (`[x, y]` by default).
-`getX` and `getY` are optional functions of the form `(point) => value` for custom point formats.
-Duplicate points are skipped.
+Constructs a tessellator given a flat array of floating-point XYZ coordinates for the knot
+centerlines.
 
-#### new Delaunator(coords)
+#### knotess.tesselate(string, options)
 
-Constructs a delaunay triangulation object given an array of point coordinates of the form:
-`[x0, y0, x1, y1, ...]` (use a typed array for best performance).
+Given an Alexander-Briggs-Rolfsen identifier and an optional configuration dictionary,
+returns an array of "meshes" where each mesh is a dictionary with three entries:
+a `Float32Array` vertex buffer, a `Uint16Array` triangle buffer, and a`Uint16Array` wireframe
+buffer.
 
-#### delaunay.triangles
+#### Knotess.LinksDb
 
-A `Uint32Array` array of triangle vertex indices (each group of three numbers forms a triangle).
-All triangles are directed counterclockwise.
+Dictionary from Alexander-Briggs-Rolfsen number (e.g. "2.2.1") to arrays of two-tuples,
+where each two-tuple defines a range within the centerlines buffer. In knot theory parlance, each
+two-tuple corresponds to a *component* and each entry in the dictionary corresponds to a *link*.
 
-To get the coordinates of all triangles, use:
+#### Knotess.Rolfsen
 
-```js
-for (let i = 0; i < triangles.length; i += 3) {
-    coordinates.push([
-        points[triangles[i]],
-        points[triangles[i + 1]],
-        points[triangles[i + 2]]
-    ]);
-}
-```
-
-#### delaunay.halfedges
-
-A `Int32Array` array of triangle half-edge indices that allows you to traverse the triangulation.
-`i`-th half-edge in the array corresponds to vertex `triangles[i]` the half-edge is coming from.
-`halfedges[i]` is the index of a twin half-edge in an adjacent triangle
-(or `-1` for outer half-edges on the convex hull).
-
-The flat array-based data structures might be counterintuitive,
-but they're one of the key reasons this library is fast.
-
-#### delaunay.hull
-
-A `Uint32Array` array of indices that reference points on the convex hull of the input data, counter-clockwise.
-
-#### delaunay.coords
-
-An array of input coordinates in the form `[x0, y0, x1, y1, ....]`,
-of the type provided in the constructor (or `Float64Array` if you used `Delaunator.from`).
+Array of strings where each string corresponds to a row in the Rolfsen table. Each string is a
+space-delimited list of Alexander-Briggs-Rolfsen identifiers.

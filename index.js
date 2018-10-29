@@ -1,29 +1,26 @@
+const TWOPI = 2 * Math.PI;
+
+function perp(u, dest) {
+    var e, v;
+    v = [1, 0, 0];
+    vec3.cross(dest, u, v);
+    e = vec3.dot(dest, dest);
+    if (e < 0.01) {
+        vec3.copy(v, [0, 1, 0]);
+        vec3.cross(dest, u, v);
+    }
+    return vec3.normalize(dest, dest);
+};
+
 export default class Knotess {
 
     constructor(centerlines) {
-        console.assert(Uint8Array.prototype.constructor == a.constructor);
-
-        this.scale = 0.15;
-        this.bézierSlices = 5;
-        this.tangentSmoothness = 3;
-        this.polygonSides = 10;
-        this.radius = 0.07;
-
-        this.CollapsedSizes = {
-          crossings: 10,
-          numComponents: 5,
-          index: 5
-        };
-
-        this.ExpandedSizes = {
-          crossings: 100,
-          numComponents: 50,
-          index: 50
-        };
+        console.assert(ArrayBuffer.prototype.constructor == centerlines.constructor);
+        this.spines = new Float32Array(centerlines);
 
         this.KnotColors = [[0.5, 0.75, 1, 0.75], [0.9, 1, 0.9, 0.75], [1, 0.75, 0.5, 0.75]];
 
-        this.Gallery = [
+        this.Rolfsen = [
             "0.1 3.1 4.1 5.1 5.2 6.1 6.2 6.3 7.1",
             "7.2 7.3 7.4 7.5 7.6 7.7 8.1 8.2 8.3",
             "8.4 8.5 8.6 8.7 8.8 8.9 8.10 8.11 8.12",
@@ -73,13 +70,142 @@ export default class Knotess {
         ["8.3.1", [8805, 45], [8850, 49], [8899, 32]], ["8.3.2", [8609, 45], [8654, 48], [8702,
         26]], ["8.3.3", [983, 43], [1026, 36], [1062, 35]], ["8.3.4", [4464, 28], [4492, 29],
         [4521, 102]], ["8.3.5", [2549, 26], [2575, 29], [2604, 44]]];
+
+        this.LinksDb = {};
+        for (let link of this.Links) {
+            this.LinksDb[link[0]] = link.slice(1);
+        }
+
+        // for (let key in this.LinksDb) {
+        //     console.log(key + " = " + JSON.stringify(this.LinksDb[key]))
+        // }
+
+        /*
+        createTrivialLinks() {
+            var trivialKnot, trivialLink;
+            trivialKnot = this.link(8, 1)[0];
+            trivialLink = this.link(0, 0); // 0.1.1
+            trivialLink.push(clone(trivialKnot));
+            trivialLink[0].offset = [0.5, -0.25, 0];
+            trivialLink.hidden = true;
+            trivialLink = this.link(8, 0); // 0.2.1
+            trivialLink.push(clone(trivialKnot));
+            trivialLink.push(clone(trivialKnot));
+            trivialLink[0].offset = [0, 0, 0];
+            trivialLink[1].color = metadata.KnotColors[1];
+            trivialLink[1].offset = [0.5, 0, 0];
+            trivialLink = this.link(10, 8); // 0.3.1
+            trivialLink.push(clone(trivialKnot));
+            trivialLink.push(clone(trivialKnot));
+            trivialLink.push(clone(trivialKnot));
+            trivialLink[0].offset = [0, 0, 0];
+            trivialLink[1].color = metadata.KnotColors[1];
+            trivialLink[1].offset = [0.5, 0, 0];
+            trivialLink[2].color = metadata.KnotColors[2];
+            return trivialLink[2].offset = [1.0, 0, 0];
+        }
+        */
+    }
+
+    // Given an Alexander-Briggs-Rolfsen identifier and an optional configuration dictionary,
+    // returns an array of "meshes" where each mesh is a dictionary with three entries: a
+    // `Float32Array` vertex buffer, a `Uint16Array` triangle buffer, and (optionally) a
+    // `Uint16Array` wireframe buffer.
+    tessellate(id, options) {
+        const defaults = {
+            scale: 0.15,
+            bézierSlices: 5,
+            polygonSides: 10,
+            radius: 0.07,
+            wireframe: false,
+            tangentSmoothness: 3
+        };
+        options = Object.assign(defaults, options);
+        const ranges = this.LinksDb[id];
+        return ranges ? this.tessellateLink(ranges, options) : [];
+    }
+
+    // Consumes an array of RANGE where RANGE = [INTEGER, INTEGER]
+    // Produces an array of MESH where MESH = {vertices: Float32Array, triangles: Uint16Array}
+    tessellateLink(ranges, options) {
+        return ranges.map((range) => this.tessellateComponent(range, options));
+    }
+
+    // Consumes [INTEGER, INTEGER]
+    // Produces {vertices: Float32Array, triangles: Uint16Array}
+    tessellateComponent(component, options) {
+        var centerline, faceCount, i, j, lineCount, next, polygonCount;
+        var polygonEdge, ptr, rawBuffer, segmentData, sides, sweepEdge, tri, triangles, tube, v;
+        var wireframe;
+        // Perform Bézier interpolation
+        segmentData = this.spines.subarray(component[0] * 3, component[0] * 3 + component[1] * 3);
+        centerline = this.getKnotPath(segmentData, options);
+        // Create a positions buffer for a swept octagon
+        rawBuffer = this.generateTube(centerline, options);
+        tube = rawBuffer;
+        // Create the index buffer for the tube wireframe
+        polygonCount = centerline.length / 3 - 1;
+        sides = options.polygonSides;
+        lineCount = polygonCount * sides * 2;
+        rawBuffer = new Uint16Array(lineCount * 2);
+        [i, ptr] = [0, 0];
+        while (i < polygonCount * (sides + 1)) {
+            j = 0;
+            while (j < sides) {
+                sweepEdge = rawBuffer.subarray(ptr + 2, ptr + 4);
+                sweepEdge[0] = i + j;
+                sweepEdge[1] = i + j + sides + 1;
+                [ptr, j] = [ptr + 2, j + 1];
+            }
+            i += sides + 1;
+        }
+        i = 0;
+        while (i < polygonCount * (sides + 1)) {
+            j = 0;
+            while (j < sides) {
+                polygonEdge = rawBuffer.subarray(ptr + 0, ptr + 2);
+                polygonEdge[0] = i + j;
+                polygonEdge[1] = i + j + 1;
+                [ptr, j] = [ptr + 2, j + 1];
+            }
+            i += sides + 1;
+        }
+        wireframe = rawBuffer;
+        // Create the index buffer for the solid tube
+        // TODO This can be be re-used from one knot to another
+        faceCount = centerline.length / 3 * sides * 2;
+        rawBuffer = new Uint16Array(faceCount * 3);
+        [i, ptr, v] = [0, 0, 0];
+        while (++i < centerline.length / 3) {
+            j = -1;
+            while (++j < sides) {
+                next = (j + 1) % sides;
+                tri = rawBuffer.subarray(ptr + 0, ptr + 3);
+                tri[0] = v + next + sides + 1;
+                tri[1] = v + next;
+                tri[2] = v + j;
+                tri = rawBuffer.subarray(ptr + 3, ptr + 6);
+                tri[0] = v + j;
+                tri[1] = v + j + sides + 1;
+                tri[2] = v + next + sides + 1;
+                ptr += 6;
+            }
+            v += sides + 1;
+        }
+        triangles = rawBuffer;
+        return {
+            vertices: tube,
+            triangles: triangles,
+            wireframe: wireframe
+        };
     }
 
     // Evaluate a Bézier function for smooth interpolation.
     // Return a Float32Array
-    getKnotPath(data) {
-        var a, b, c, dt, i, ii, j, k, l, n, p, r, rawBuffer, ref, slice, slices, t, tt, v, v1, v2, v3, v4;
-        slices = this.bézierSlices;
+    getKnotPath(data, options) {
+        var a, b, c, dt, i, ii, j, k, l, n, p, r, rawBuffer, ref, slices, t, tt, v, v1, v2, v3, v4;
+        var slice;
+        slices = options.bézierSlices;
         rawBuffer = new Float32Array(data.length * slices + 3);
         [i, j] = [0, 0];
         while (i < data.length + 3) {
@@ -105,7 +231,8 @@ export default class Knotess {
             vec3.lerp(v2, v2, b, 1 / 3);
             vec3.lerp(v3, v3, b, 1 / 3);
             t = dt = 1 / (slices + 1);
-            for (slice = k = 0, ref = slices; (0 <= ref ? k < ref : k > ref); slice = 0 <= ref ? ++k : --k) {
+            for (slice = k = 0, ref = slices; (0 <= ref ? k < ref : k > ref);
+                    slice = 0 <= ref ? ++k : --k) {
                 tt = 1 - t;
                 c = [tt * tt * tt, 3 * tt * tt * t, 3 * tt * t * t, t * t * t];
                 p = (function() {
@@ -124,7 +251,7 @@ export default class Knotess {
                 p = p.reduce(function(a, b) {
                     return vec3.add(a, a, b);
                 });
-                vec3.scale(p, p, this.scale);
+                vec3.scale(p, p, options.scale);
                 rawBuffer.set(p, j);
                 j += 3;
                 if (j >= rawBuffer.length) {
@@ -139,16 +266,17 @@ export default class Knotess {
     // Sweep a n-sided polygon along the given centerline.
     // Returns the mesh verts as a Float32Arrays.
     // Repeats the vertex along the seam to allow nice texture coords.
-    generateTube(centerline) {
-        var B, C, basis, center, count, dtheta, frames, i, m, mesh, n, normal, p, r, theta, v, x, y, z;
-        n = this.polygonSides;
+    generateTube(centerline, options) {
+        var B, C, basis, center, count, dtheta, frames, i, m, mesh, n, normal, p, r, theta;
+        var v, x, y, z;
+        n = options.polygonSides;
         dtheta = TWOPI / n;
-        frames = this.generateFrames(centerline);
+        frames = this.generateFrames(centerline, options);
         count = centerline.length / 3;
         mesh = new Float32Array(count * (n + 1) * 6);
         [i, m] = [0, 0];
         p = vec3.create();
-        r = this.radius;
+        r = options.radius;
         while (i < count) {
             v = 0;
             basis = (function() {
@@ -180,8 +308,8 @@ export default class Knotess {
             });
             theta = 0;
             while (v < n + 1) {
-                x = r * cos(theta);
-                y = r * sin(theta);
+                x = r * Math.cos(theta);
+                y = r * Math.sin(theta);
                 z = 0;
                 vec3.transformMat3(p, [x, y, z], basis);
                 p[0] += centerline[i * 3 + 0];
@@ -219,7 +347,7 @@ export default class Knotess {
     // Generate reasonable orthonormal basis vectors for curve in R3.
     // Returns three lists-of-vec3's for the basis vectors.
     // See "Computation of Rotation Minimizing Frame" by Wang and Jüttler.
-    generateFrames(centerline) {
+    generateFrames(centerline, options) {
         var count, frameR, frameS, frameT, i, j, n, r0, ri, rj, s0, si, sj, t0, ti, tj, xi, xj;
         count = centerline.length / 3;
         frameR = new Float32Array(count * 3);
@@ -228,7 +356,7 @@ export default class Knotess {
         // Obtain unit-length tangent vectors
         i = -1;
         while (++i < count) {
-            j = (i + 1 + this.tangentSmoothness) % (count - 1);
+            j = (i + 1 + options.tangentSmoothness) % (count - 1);
             xi = centerline.subarray(i * 3, i * 3 + 3);
             xj = centerline.subarray(j * 3, j * 3 + 3);
             ti = frameT.subarray(i * 3, i * 3 + 3);
@@ -279,30 +407,6 @@ export default class Knotess {
         // Return the basis columns
         return [frameR, frameS, frameT];
     }
-
-    createTrivialLinks() {
-        var trivialKnot, trivialLink;
-        trivialKnot = this.link(8, 1)[0];
-        trivialLink = this.link(0, 0); // 0.1.1
-        trivialLink.push(clone(trivialKnot));
-        trivialLink[0].offset = [0.5, -0.25, 0];
-        trivialLink.hidden = true;
-        trivialLink = this.link(8, 0); // 0.2.1
-        trivialLink.push(clone(trivialKnot));
-        trivialLink.push(clone(trivialKnot));
-        trivialLink[0].offset = [0, 0, 0];
-        trivialLink[1].color = metadata.KnotColors[1];
-        trivialLink[1].offset = [0.5, 0, 0];
-        trivialLink = this.link(10, 8); // 0.3.1
-        trivialLink.push(clone(trivialKnot));
-        trivialLink.push(clone(trivialKnot));
-        trivialLink.push(clone(trivialKnot));
-        trivialLink[0].offset = [0, 0, 0];
-        trivialLink[1].color = metadata.KnotColors[1];
-        trivialLink[1].offset = [0.5, 0, 0];
-        trivialLink[2].color = metadata.KnotColors[2];
-        return trivialLink[2].offset = [1.0, 0, 0];
-    }
 }
 
 vec3.direction = function (vec, vec2, dest) {
@@ -325,39 +429,4 @@ vec3.direction = function (vec, vec2, dest) {
     dest[1] = y * len;
     dest[2] = z * len;
     return dest;
-};
-
-TWOPI = 2 * Math.PI;
-
-[sin, cos, pow, abs] = (function() {
-    var k, len, ref, results;
-    ref = "sin cos pow abs".split(' ');
-    results = [];
-    for (k = 0, len = ref.length; k < len; k++) {
-        f = ref[k];
-        results.push(Math[f]);
-    }
-    return results;
-})();
-
-sgn = function(x) {
-    if (x > 0) {
-        return +1;
-    }
-    if (x < 0) {
-        return -1;
-    }
-    return 0;
-};
-
-perp = function(u, dest) {
-    var e, v;
-    v = [1, 0, 0];
-    vec3.cross(dest, u, v);
-    e = vec3.dot(dest, dest);
-    if (e < 0.01) {
-        vec3.copy(v, [0, 1, 0]);
-        vec3.cross(dest, u, v);
-    }
-    return vec3.normalize(dest, dest);
 };
