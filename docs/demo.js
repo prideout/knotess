@@ -20,57 +20,13 @@ class App {
         this.navigateTo(linkid);
     }
 
-    getPreviousLinkId(linkid) {
-        const index = this.LinearRolfsenLookup[linkid];
-        return this.LinearRolfsen[Math.max(0, index - 1)];
-    }
-
-    getNextLinkId(linkid) {
-        const index = this.LinearRolfsenLookup[linkid];
-        const upper = this.LinearRolfsen.length -  1;
-        return this.LinearRolfsen[Math.min(upper, index + 1)];
-    }
-
-    clone(mesh, translation) {
-        mesh = {
-            vertices: new Float32Array(mesh.vertices),
-            triangles: mesh.triangles,
-        };
-        const nverts = mesh.vertices.length / 6;
-        for (let i = 0; i < nverts; i++) {
-            mesh.vertices[i * 6 + 0] += translation[0];
-            mesh.vertices[i * 6 + 1] += translation[1];
-            mesh.vertices[i * 6 + 2] += translation[2];
-        }
-        return mesh;
-    }
-
     tessellate(linkid) {
         const options = {
             polygonSides: 30,
-            radius: 0.07
+            radius: 0.07,
+            tangents: true
         };
-        const meshes = this.knots.tessellate(linkid, options);
-        if (meshes.length == 0) {
-            if (linkid == "0.1") {
-                const mesh = this.knots.tessellate("2.2.1", options)[0];
-                return [this.clone(mesh, [0.5, -0.25, 0])];
-            }
-            if (linkid == "0.2.1") {
-                const mesh = this.knots.tessellate("2.2.1", options)[0];
-                return [
-                    this.clone(mesh, [0, 0, 0]),
-                    this.clone(mesh, [0.5, 0, 0])];
-            }
-            if (linkid == "0.3.1") {
-                const mesh = this.knots.tessellate("2.2.1", options)[0];
-                return [
-                    this.clone(mesh, [0, 0, 0]),
-                    this.clone(mesh, [0.5, 0, 0]),
-                    this.clone(mesh, [1.0, 0, 0])];
-            }
-        }
-        return meshes;
+        return this.knots.tessellate(linkid, options);
     }
 
     navigateTo(linkid) {
@@ -91,8 +47,7 @@ class App {
             const bounds = [minpt, maxpt];
             let i = 0;
             for (const mesh of meshes) {
-                const renderable = this.createRenderable(
-                    mesh.vertices, mesh.triangles, bounds, this.materials[i++]);
+                const renderable = this.createRenderable(mesh, bounds, this.materials[i++]);
                 renderables.push(renderable);
             }
         }
@@ -110,8 +65,8 @@ class App {
         }
         const uparrow = document.getElementById('uparrow');
         const dnarrow = document.getElementById('dnarrow');
-        const previd = this.getPreviousLinkId(linkid);
-        const nextid = this.getNextLinkId(linkid);
+        const previd = this.knots.getPreviousLinkId(linkid);
+        const nextid = this.knots.getNextLinkId(linkid);
         uparrow.href = '#' + previd;
         dnarrow.href = '#' + nextid;
         uparrow.style = linkid == previd ? "display:none" : "display:inline";
@@ -122,14 +77,6 @@ class App {
         this.canvas = canvas;
         this.renderables = {};
         this.knots = new Knotess(Filament.assets[CENTERLINES].buffer);
-        this.LinearRolfsen = [];
-        this.LinearRolfsenLookup = {};
-        for (const row of this.knots.Rolfsen) {
-            for (const id of row.split(' ')) {
-                this.LinearRolfsenLookup[id] = this.LinearRolfsen.length;
-                this.LinearRolfsen.push(id);
-            }
-        }
 
         const engine = this.engine = Filament.Engine.create(canvas, {
             alpha: true,
@@ -194,47 +141,35 @@ class App {
         window.requestAnimationFrame(this.render);
     }
 
-    createRenderable(vertices, triangles, bounds, matinstance) {
+    createRenderable(mesh, bounds, matinstance) {
         const renderable = Filament.EntityManager.get().create();
         const engine = this.engine;
-        const nverts = vertices.length / 6;
-
-        // Compute tangents. The "vertices" buffer looks like: PX PY PZ NX NY NZ.
-        const tangents = new Uint16Array(4 * nverts);
-        for (var i = 0; i < nverts; ++i) {
-            const n = vertices.subarray(i * 6 + 3, i * 6 + 6);
-            const dst = tangents.subarray(i * 4, i * 4 + 4);
-            const b = vec3.cross(vec3.create(), n, [1, 0, 0]);
-            const t = vec3.cross(vec3.create(), b, n);
-            const q = quat.fromMat3(quat.create(), [
-                    t[0], t[1], t[2],
-                    b[0], b[1], b[2],
-                    n[0], n[1], n[2]]);
-            vec4.packSnorm16(dst, q);
-        }
+        const vertices = mesh.vertices;
+        const tangents = mesh.tangents;
+        const triangles = mesh.triangles;
 
         const vb = Filament.VertexBuffer.Builder()
-        .vertexCount(nverts)
-        .bufferCount(2)
-        .attribute(VertexAttribute.POSITION, 0, AttributeType.FLOAT3, 0, 24)
-        .attribute(VertexAttribute.TANGENTS, 1, AttributeType.SHORT4, 0, 0)
-        .normalized(VertexAttribute.TANGENTS)
-        .build(engine);
+            .vertexCount(vertices.length / 6)
+            .bufferCount(2)
+            .attribute(VertexAttribute.POSITION, 0, AttributeType.FLOAT3, 0, 24)
+            .attribute(VertexAttribute.TANGENTS, 1, AttributeType.SHORT4, 0, 0)
+            .normalized(VertexAttribute.TANGENTS)
+            .build(engine);
 
         const ib = Filament.IndexBuffer.Builder()
-        .indexCount(triangles.length)
-        .bufferType(IndexType.USHORT)
-        .build(engine);
+            .indexCount(triangles.length)
+            .bufferType(IndexType.USHORT)
+            .build(engine);
 
         vb.setBufferAt(engine, 0, Filament.Buffer(vertices));
         vb.setBufferAt(engine, 1, Filament.Buffer(tangents));
         ib.setBuffer(engine, Filament.Buffer(triangles));
 
         Filament.RenderableManager.Builder(1)
-        .boundingBox(bounds)
-        .material(0, matinstance)
-        .geometry(0, PrimitiveType.TRIANGLES, vb, ib)
-        .build(engine, renderable);
+            .boundingBox(bounds)
+            .material(0, matinstance)
+            .geometry(0, PrimitiveType.TRIANGLES, vb, ib)
+            .build(engine, renderable);
 
         return renderable;
     }

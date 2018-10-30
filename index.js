@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, quat } from 'gl-matrix';
 
 const TWOPI = 2 * Math.PI;
 
@@ -67,12 +67,22 @@ function direction(vec, vec2, dest) {
     return dest;
 }
 
-export default class Knotess {
+function clamp(v,least,most) {return Math.max(Math.min(most,v),least)}
 
+function packSnorm16(value) {return Math.round(clamp(value,-1,1)*32767)}
+
+function vec4_packSnorm16(out,src) {
+    out[0]=packSnorm16(src[0]);
+    out[1]=packSnorm16(src[1]);
+    out[2]=packSnorm16(src[2]);
+    out[3]=packSnorm16(src[3]);
+    return out
+}
+
+export default class Knotess {
     constructor(centerlines) {
         console.assert(ArrayBuffer.prototype.constructor === centerlines.constructor);
         this.spines = new Float32Array(centerlines);
-
         this.Rolfsen = [
             '0.1 3.1 4.1 5.1 5.2 6.1 6.2 6.3 7.1',
             '7.2 7.3 7.4 7.5 7.6 7.7 8.1 8.2 8.3',
@@ -87,55 +97,88 @@ export default class Knotess {
             '8.2.4 8.2.5 8.2.6 8.2.7 8.2.8 8.2.9 8.2.10 8.2.11 0.3.1',
             '6.3.1 6.3.2 6.3.3 7.3.1 8.3.1 8.3.2 8.3.3 8.3.4 8.3.5'
         ];
-
+        this.LinearRolfsen = [];
+        this.LinearRolfsenLookup = {};
+        for (const row of this.Rolfsen) {
+            for (const id of row.split(' ')) {
+                this.LinearRolfsenLookup[id] = this.LinearRolfsen.length;
+                this.LinearRolfsen.push(id);
+            }
+        }
         this.LinksDb = {};
         for (const link of Links) {
             this.LinksDb[link[0]] = link.slice(1);
         }
+    }
 
-        /*
-        createTrivialLinks() {
-            let trivialKnot, trivialLink;
-            trivialKnot = this.link(8, 1)[0];
-            trivialLink = this.link(0, 0); // 0.1.1
-            trivialLink.push(clone(trivialKnot));
-            trivialLink[0].offset = [0.5, -0.25, 0];
-            trivialLink.hidden = true;
-            trivialLink = this.link(8, 0); // 0.2.1
-            trivialLink.push(clone(trivialKnot));
-            trivialLink.push(clone(trivialKnot));
-            trivialLink[0].offset = [0, 0, 0];
-            trivialLink[1].color = metadata.KnotColors[1];
-            trivialLink[1].offset = [0.5, 0, 0];
-            trivialLink = this.link(10, 8); // 0.3.1
-            trivialLink.push(clone(trivialKnot));
-            trivialLink.push(clone(trivialKnot));
-            trivialLink.push(clone(trivialKnot));
-            trivialLink[0].offset = [0, 0, 0];
-            trivialLink[1].color = metadata.KnotColors[1];
-            trivialLink[1].offset = [0.5, 0, 0];
-            trivialLink[2].color = metadata.KnotColors[2];
-            return trivialLink[2].offset = [1.0, 0, 0];
-        }
-        */
+    getPreviousLinkId(linkid) {
+        const index = this.LinearRolfsenLookup[linkid];
+        return this.LinearRolfsen[Math.max(0, index - 1)];
+    }
+
+    getNextLinkId(linkid) {
+        const index = this.LinearRolfsenLookup[linkid];
+        const upper = this.LinearRolfsen.length -  1;
+        return this.LinearRolfsen[Math.min(upper, index + 1)];
     }
 
     // Given an Alexander-Briggs-Rolfsen identifier and an optional configuration dictionary,
     // returns an array of 'meshes' where each mesh is a dictionary with three entries: a
     // `Float32Array` vertex buffer, a `Uint16Array` triangle buffer, and (optionally) a
     // `Uint16Array` wireframe buffer. The vertex buffer is a flat array of PX PY PZ NX NY NZ.
-    tessellate(id, options) {
+    tessellate(linkid, options) {
         const defaults = {
             scale: 0.15,
             bézierSlices: 5,
             polygonSides: 10,
             radius: 0.07,
             wireframe: false,
+            tangents: false,
             tangentSmoothness: 3
         };
         options = Object.assign(defaults, options);
-        const ranges = this.LinksDb[id];
-        return ranges ? this.tessellateLink(ranges, options) : [];
+        const ranges = this.LinksDb[linkid];
+        if (ranges.length) {
+            return this.tessellateLink(ranges, options);
+        }
+        if (linkid == "0.1") {
+            const mesh = this.tessellate("2.2.1", options)[0];
+            return [this.clone(mesh, [0.5, -0.25, 0])];
+        }
+        if (linkid == "0.2.1") {
+            const mesh = this.tessellate("2.2.1", options)[0];
+            return [
+                this.clone(mesh, [0, 0, 0]),
+                this.clone(mesh, [0.5, 0, 0])];
+        }
+        if (linkid == "0.3.1") {
+            const mesh = this.tessellate("2.2.1", options)[0];
+            return [
+                this.clone(mesh, [0, 0, 0]),
+                this.clone(mesh, [0.5, 0, 0]),
+                this.clone(mesh, [1.0, 0, 0])];
+        }
+        return [];
+    }
+
+    clone(mesh, translation) {
+        const result = {
+            vertices: new Float32Array(mesh.vertices),
+            triangles: mesh.triangles,
+        };
+        if (mesh.tangents) {
+            result.tangents = new Uint16Array(mesh.tangents);
+        }
+        if (mesh.wireframe) {
+            result.wireframe = new Uint16Array(mesh.wireframe);
+        }
+        const nverts = mesh.vertices.length / 6;
+        for (let i = 0; i < nverts; i++) {
+            result.vertices[i * 6 + 0] += translation[0];
+            result.vertices[i * 6 + 1] += translation[1];
+            result.vertices[i * 6 + 2] += translation[2];
+        }
+        return result;
     }
 
     // Consumes an array of RANGE where RANGE = [INTEGER, INTEGER]
@@ -207,8 +250,26 @@ export default class Knotess {
             v += sides + 1;
         }
         triangles = rawBuffer;
+        // Generate surface orientation quaternions.
+        let tangents = null;
+        if (options.tangents) {
+            const nverts = tube.length / 6;
+            tangents = new Uint16Array(4 * nverts);
+            for (let i = 0; i < nverts; ++i) {
+                const n = tube.subarray(i * 6 + 3, i * 6 + 6);
+                const dst = tangents.subarray(i * 4, i * 4 + 4);
+                const b = vec3.cross(vec3.create(), n, [1, 0, 0]);
+                const t = vec3.cross(vec3.create(), b, n);
+                const q = quat.fromMat3([0, 0, 0, 1], [
+                        t[0], t[1], t[2],
+                        b[0], b[1], b[2],
+                        n[0], n[1], n[2]]);
+                vec4_packSnorm16(dst, q);
+            }
+        }
         return {
             vertices: tube,
+            tangents: tangents,
             triangles: triangles,
             wireframe: wireframe
         };
