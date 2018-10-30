@@ -20,7 +20,26 @@ class App {
         this.navigateTo(linkid);
     }
 
+    getPreviousLinkId(linkid) {
+        const index = this.LinearRolfsenLookup[linkid];
+        return this.LinearRolfsen[Math.max(0, index - 1)];
+    }
+
+    getNextLinkId(linkid) {
+        const index = this.LinearRolfsenLookup[linkid];
+        const upper = this.LinearRolfsen.length -  1;
+        return this.LinearRolfsen[Math.min(upper, index + 1)];
+    }
+
     navigateTo(linkid) {
+        // Remove old renderable (if any)
+        const meshes = this.renderables[this.linkid];
+        if (meshes) {
+            for (const mesh of meshes) {
+                this.scene.remove(mesh);
+            }
+        }
+        this.linkid = linkid;
         // Create new renderables if they are not in the cache.
         let renderables = this.renderables[linkid];
         if (!renderables) {
@@ -45,12 +64,13 @@ class App {
         // Update the URL hash and label.
         const label = document.getElementById('label');
         const comps = linkid.split('.');
-        label.innerHTML = `${comps[0]}<sup>${comps[1]}</sup><sub>${comps[2]}</sub>`;
-        const index = this.LinearRolfsenLookup[linkid];
-        const prev = this.LinearRolfsen[index - 1];
-        const next = this.LinearRolfsen[index + 1];
-        document.getElementById('uparrow').href = '#' + prev;
-        document.getElementById('dnarrow').href = '#' + next;
+        if (comps.length == 3) {
+            label.innerHTML = `${comps[0]}<sup>${comps[1]}</sup><sub>${comps[2]}</sub>`;
+        } else {
+            label.innerHTML = `${comps[0]}<sub>${comps[1]}</sub>`;
+        }
+        document.getElementById('uparrow').href = '#' + this.getPreviousLinkId(linkid);
+        document.getElementById('dnarrow').href = '#' + this.getNextLinkId(linkid);
     }
 
     constructor(canvas) {
@@ -71,31 +91,50 @@ class App {
 
         const material_package = Filament.Buffer(Filament.assets['plastic.filamat']);
         const mat = engine.createMaterial(material_package);
-        const mats = this.materials = [mat.createInstance(), mat.createInstance()];
+        const mats = this.materials = [
+            mat.createInstance(), mat.createInstance(), mat.createInstance()];
 
-        const red = [0.2, 0.3, 0.4];
-        mats[0].setColorParameter("baseColor", Filament.RgbType.sRGB, red);
+        const colors = [[0.5, 0.75, 1], [0.9, 1, 0.9], [1, 0.75, 0.5]];
+
+        mats[0].setColorParameter("baseColor", Filament.RgbType.sRGB, colors[0]);
         mats[0].setFloatParameter("roughness", 0.1);
         mats[0].setFloatParameter("clearCoat", 1.0);
         mats[0].setFloatParameter("clearCoatRoughness", 0.3);
 
-        const yellow = [0.2, 0.4, 0.3];
-        mats[1].setColorParameter("baseColor", Filament.RgbType.sRGB, yellow);
+        mats[1].setColorParameter("baseColor", Filament.RgbType.sRGB, colors[1]);
         mats[1].setFloatParameter("roughness", 0.5);
         mats[1].setFloatParameter("clearCoat", 1.0);
         mats[1].setFloatParameter("clearCoatRoughness", 0.3);
 
+        mats[2].setColorParameter("baseColor", Filament.RgbType.sRGB, colors[2]);
+        mats[2].setFloatParameter("roughness", 0.5);
+        mats[2].setFloatParameter("clearCoat", 1.0);
+        mats[2].setFloatParameter("clearCoatRoughness", 0.3);
+
         this.renderables = {};
-        this.navigateTo("7.2.3");
-        document.location.hash = "7.2.3";
+        this.linkid = "7.2.3";
+        this.navigateTo(this.linkid);
+        document.location.hash = this.linkid;
         window.onhashchange = this.onHashChange.bind(this);
+
+        document.addEventListener('keydown', (event) => {
+            const keyName = event.key;
+            if (keyName == 'ArrowUp') {
+                const el = document.getElementById('uparrow');
+                this.navigateTo(el.hash.substr(1));
+            }
+            if (keyName == 'ArrowDown') {
+                const el = document.getElementById('dnarrow');
+                this.navigateTo(el.hash.substr(1));
+            }
+          });
 
         const sunlight = Filament.EntityManager.get().create();
         this.scene.addEntity(sunlight);
 
         Filament.LightManager.Builder(LightType.SUN)
         .color([0.98, 0.92, 0.89])
-        .intensity(50000.0)
+        .intensity(20000.0)
         .direction([0.6, -1.0, -0.8])
         .castShadows(true)
         .sunAngularRadius(1.9)
@@ -105,7 +144,7 @@ class App {
 
         const ibldata = Filament.assets['pillars_2k_ibl.ktx'];
         const indirectLight = engine.createIblFromKtx(ibldata, {'rgbm': true});
-        indirectLight.setIntensity(50000);
+        indirectLight.setIntensity(20000);
         this.scene.setIndirectLight(indirectLight);
 
         this.swapChain = engine.createSwapChain();
@@ -170,7 +209,6 @@ class App {
     render() {
         const eye = [0, 0, 4], center = [0, 0, 0], up = [0, 1, 0];
         this.camera.lookAt(eye, center, up);
-        this.renderer.render(this.swapChain, this.view);
         const radians = Date.now() / 1000;
         const transform = mat4.fromRotation(mat4.create(), radians, [0, 1, 0]);
         const tcm = this.engine.getTransformManager();
@@ -179,6 +217,7 @@ class App {
                 tcm.setTransform(tcm.getInstance(renderable), transform);
             }
         }
+        this.renderer.render(this.swapChain, this.view);
         window.requestAnimationFrame(this.render);
     }
 
