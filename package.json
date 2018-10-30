@@ -28,6 +28,7 @@
     "disable__pretest": "npm run lint",
     "disable__test": "node -r esm test.js",
     "disable__cov": "c8 node -r esm test.js && c8 report -r html",
+    "test": "rollup -c",
     "build": "rollup -c",
     "clean": "rm knotess.*",
     "watch": "rollup -cw",
