@@ -69,8 +69,8 @@ class App {
         const nextid = this.knots.getNextLinkId(linkid);
         uparrow.href = '#' + previd;
         dnarrow.href = '#' + nextid;
-        uparrow.style = linkid == previd ? "display:none" : "display:inline";
-        dnarrow.style = linkid == nextid ? "display:none" : "display:inline";
+        uparrow.style.display = linkid == previd ? "none" : "block";
+        dnarrow.style.display = linkid == nextid ? "none" : "block";
     }
 
     constructor(canvas) {
@@ -107,13 +107,13 @@ class App {
 
         document.addEventListener('keydown', (event) => {
             const keyName = event.key;
-            if (keyName == 'ArrowUp') {
+            if (keyName == 'ArrowUp' || keyName == 'ArrowLeft') {
                 const el = document.getElementById('uparrow');
                 const linkid = el.hash.substr(1);
                 this.navigateTo(linkid);
                 document.location.hash = linkid;
             }
-            if (keyName == 'ArrowDown') {
+            if (keyName == 'ArrowDown' || keyName == 'ArrowRight') {
                 const el = document.getElementById('dnarrow');
                 const linkid = el.hash.substr(1);
                 this.navigateTo(linkid);
@@ -190,10 +190,56 @@ class App {
     }
 
     resize() {
+        let el;
         const dpr = window.devicePixelRatio;
         const width = this.canvas.width = this.canvas.clientWidth * dpr;
         const height = this.canvas.height = this.canvas.clientHeight * dpr;
         this.view.setViewport([0, 0, width, height]);
+
+        const position = (el, top, right, bottom, left) => {
+            const stringify = (n) => isNaN(n) ? n : n + 'px';
+            el.style['top'] = stringify(top);
+            el.style['right'] = stringify(right);
+            el.style['bottom'] = stringify(bottom);
+            el.style['left'] = stringify(left);
+        }
+
+        if (width > height) {
+            // Morph into left arrow
+            el = document.getElementById('uparrow');
+            el.style['margin'] = 'auto auto auto 5px';
+            el.style['text-align'] = 'left';
+            position(el, 0, 'auto', 0, 5);
+            el = el.firstElementChild;
+            el.classList.remove('fa-chevron-up');
+            el.classList.add('fa-chevron-left');
+            // Morph into right arrow
+            el = document.getElementById('dnarrow');
+            el.style['margin'] = 'auto 5px auto auto';
+            el.style['text-align'] = 'right';
+            position(el, 0, 5, 0, 'auto');
+            el = el.firstElementChild;
+            el.classList.remove('fa-chevron-down');
+            el.classList.add('fa-chevron-right');
+        } else {
+            // Morph into up arrow
+            el = document.getElementById('uparrow');
+            el.style['margin'] = '0px auto auto auto';
+            el.style['text-align'] = 'center';
+            position(el, 0, 0, 'auto', 0);
+            el = el.firstElementChild;
+            el.classList.remove('fa-chevron-left');
+            el.classList.add('fa-chevron-up');
+            // Morph into down arrow
+            el = document.getElementById('dnarrow');
+            el.style['margin'] = 'auto auto auto 0px';
+            el.style['text-align'] = 'center';
+            position(el, 'auto', 0, 0, 0);
+            el = el.firstElementChild;
+            el.classList.remove('fa-chevron-right');
+            el.classList.add('fa-chevron-down');
+        }
+
         this.camera.setProjectionFov(45, width / height, 1.0, 10.0,
             width > height ? Fov.VERTICAL : Fov.HORIZONTAL);
     }
