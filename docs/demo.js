@@ -256,8 +256,8 @@ class App {
 
     resize() {
         const dpr = window.devicePixelRatio;
-        const width = this.canvas.width = window.innerWidth * dpr;
-        const height = this.canvas.height = window.innerHeight * dpr;
+        const width = this.canvas.width = this.canvas.clientWidth * dpr;
+        const height = this.canvas.height = this.canvas.clientHeight * dpr;
         this.view.setViewport([0, 0, width, height]);
         this.camera.setProjectionFov(45, width / height, 1.0, 10.0,
             width > height ? Fov.VERTICAL : Fov.HORIZONTAL);
