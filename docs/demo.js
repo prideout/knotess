@@ -2,11 +2,7 @@ Filament.loadMathExtensions();
 
 const CENTERLINES = '//unpkg.com/knotess@1.0.1/centerlines.bin';
 
-Filament.init([
-    'plastic.filamat',
-    CENTERLINES,
-    'pillars_2k_ibl.ktx',
-], () => {
+Filament.init([ CENTERLINES, 'plastic.filamat', 'pillars_2k_ibl.ktx' ], () => {
     const canvas = document.getElementsByTagName('canvas')[0];
     window.VertexAttribute = Filament.VertexAttribute;
     window.AttributeType = Filament.VertexBuffer$AttributeType;
@@ -19,10 +15,56 @@ Filament.init([
 
 class App {
 
+    onHashChange() {
+        const linkid = document.location.hash.substr(1);
+        this.navigateTo(linkid);
+    }
+
+    navigateTo(linkid) {
+        // Create new renderables if they are not in the cache.
+        let renderables = this.renderables[linkid];
+        if (!renderables) {
+            const meshes = this.knots.tessellate(linkid, {
+                polygonSides: 30,
+                radius: 0.07
+            });
+            renderables = this.renderables[linkid] = [];
+            const M = 1.5, minpt = [-M, -M, -M], maxpt = [M, M, M];
+            const bounds = [minpt, maxpt];
+            let i = 0;
+            for (const mesh of meshes) {
+                const renderable = this.createRenderable(
+                    mesh.vertices, mesh.triangles, bounds, this.materials[i++]);
+                renderables.push(renderable);
+            }
+        }
+        // Add renderables to scene.
+        for (const renderable of renderables) {
+            this.scene.addEntity(renderable);
+        }
+        // Update the URL hash and label.
+        const label = document.getElementById('label');
+        const comps = linkid.split('.');
+        label.innerHTML = `${comps[0]}<sup>${comps[1]}</sup><sub>${comps[2]}</sub>`;
+        const index = this.LinearRolfsenLookup[linkid];
+        const prev = this.LinearRolfsen[index - 1];
+        const next = this.LinearRolfsen[index + 1];
+        document.getElementById('uparrow').href = '#' + prev;
+        document.getElementById('dnarrow').href = '#' + next;
+    }
+
     constructor(canvas) {
         this.canvas = canvas;
         this.renderables = {};
         this.knots = new Knotess(Filament.assets[CENTERLINES].buffer);
+        this.LinearRolfsen = [];
+        this.LinearRolfsenLookup = {};
+        for (const row of this.knots.Rolfsen) {
+            for (const id of row.split(' ')) {
+                this.LinearRolfsenLookup[id] = this.LinearRolfsen.length;
+                this.LinearRolfsen.push(id);
+            }
+        }
 
         const engine = this.engine = Filament.Engine.create(canvas);
         this.scene = engine.createScene();
@@ -44,27 +86,9 @@ class App {
         mats[1].setFloatParameter("clearCoatRoughness", 0.3);
 
         this.renderables = {};
-
-        const linkid = "7.2.3";
-        const el = document.getElementById('label')
-        const comps = linkid.split('.');
-        el.innerHTML = comps[0] + "<sup>" + comps[1] + "</sup><sub>" + comps[2] + "</sub>";
-
-        const meshes = this.knots.tessellate(linkid, {
-            polygonSides: 30,
-            radius: 0.07
-        });
-
-        const renderables = this.renderables[linkid] = [];
-        const M = 1.5, minpt = [-M, -M, -M], maxpt = [M, M, M];
-        const bounds = [minpt, maxpt];
-        let i = 0;
-        for (const mesh of meshes) {
-            const renderable = this.createRenderable(
-                mesh.vertices, mesh.triangles, bounds, this.materials[i++]);
-            this.scene.addEntity(renderable);
-            renderables.push(renderable);
-        }
+        this.navigateTo("7.2.3");
+        document.location.hash = "7.2.3";
+        window.onhashchange = this.onHashChange.bind(this);
 
         const sunlight = Filament.EntityManager.get().create();
         this.scene.addEntity(sunlight);
@@ -110,7 +134,10 @@ class App {
             const dst = tangents.subarray(i * 4, i * 4 + 4);
             const b = vec3.cross(vec3.create(), n, [1, 0, 0]);
             const t = vec3.cross(vec3.create(), b, n);
-            const q = quat.fromMat3(quat.create(), [t[0], t[1], t[2], b[0], b[1], b[2], n[0], n[1], n[2]]);
+            const q = quat.fromMat3(quat.create(), [
+                    t[0], t[1], t[2],
+                    b[0], b[1], b[2],
+                    n[0], n[1], n[2]]);
             vec4.packSnorm16(dst, q);
         }
 

@@ -76,10 +76,6 @@ export default class Knotess {
             this.LinksDb[link[0]] = link.slice(1);
         }
 
-        // for (let key in this.LinksDb) {
-        //     console.log(key + ' = ' + JSON.stringify(this.LinksDb[key]))
-        // }
-
         /*
         createTrivialLinks() {
             let trivialKnot, trivialLink;
