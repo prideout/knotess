@@ -1,18 +1,15 @@
 import {terser} from 'rollup-plugin-terser';
 import buble from 'rollup-plugin-buble';
+import resolve from 'rollup-plugin-node-resolve';
 
 const config = (file, plugins) => ({
     input: 'index.js',
     output: {
         name: 'Knotess',
-        globals: {
-            'gl-matrix': 'vec3'
-        },
         format: 'umd',
         file
     },
-    external: ['gl-matrix'],
-    plugins
+    plugins: [ resolve() ]
 });
 
 const bubleConfig = {transforms: {dangerousForOf: true}};

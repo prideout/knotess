@@ -1,5 +1,5 @@
 import test from 'tape';
-import Knotess from './knotess.js';
+import Knotess from './index.js';
 import fs from 'fs';
 
 test('smoke', (t) => {

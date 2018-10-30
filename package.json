@@ -16,6 +16,7 @@
     "esm": "^3.0.84",
     "rollup": "^0.66.2",
     "rollup-plugin-buble": "^0.19.2",
+    "rollup-plugin-node-resolve": "^3.4.0",
     "rollup-plugin-terser": "^3.0.0",
     "tape": "^4.9.1"
   },
@@ -26,9 +27,8 @@
   "scripts": {
     "disable__lint": "eslint index.js test.js rollup.config.js",
     "disable__pretest": "npm run lint",
-    "disable__test": "node -r esm test.js",
+    "test": "node -r esm test.js",
     "disable__cov": "c8 node -r esm test.js && c8 report -r html",
-    "test": "rollup -c",
     "build": "rollup -c",
     "clean": "rm knotess.*",
     "watch": "rollup -cw",

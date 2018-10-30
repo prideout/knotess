@@ -1,4 +1,4 @@
-import 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 
 const TWOPI = 2 * Math.PI;
 
@@ -46,6 +46,25 @@ function perp(u, dest) {
         vec3.cross(dest, u, v);
     }
     return vec3.normalize(dest, dest);
+}
+
+function direction(vec, vec2, dest) {
+    if (!dest) { dest = vec; }
+    let x = vec[0] - vec2[0],
+    y = vec[1] - vec2[1],
+    z = vec[2] - vec2[2],
+    len = Math.sqrt(x * x + y * y + z * z);
+    if (!len) {
+        dest[0] = 0;
+        dest[1] = 0;
+        dest[2] = 0;
+        return dest;
+    }
+    len = 1 / len;
+    dest[0] = x * len;
+    dest[1] = y * len;
+    dest[2] = z * len;
+    return dest;
 }
 
 export default class Knotess {
@@ -329,7 +348,7 @@ export default class Knotess {
                 center[0] = centerline[i * 3 + 0];
                 center[1] = centerline[i * 3 + 1];
                 center[2] = centerline[i * 3 + 2];
-                vec3.direction(p, center, normal);
+                direction(p, center, normal);
                 // Stamp n into 'm', skipping over the position:
                 mesh.set(normal, m + 3);
                 [m, v] = [m + 6, v + 1];
@@ -355,7 +374,7 @@ export default class Knotess {
             xi = centerline.subarray(i * 3, i * 3 + 3);
             xj = centerline.subarray(j * 3, j * 3 + 3);
             ti = frameT.subarray(i * 3, i * 3 + 3);
-            vec3.direction(xi, xj, ti);
+            direction(xi, xj, ti);
         }
         // Allocate some temporaries for vector math
         [r0, s0, t0] = (function() {
@@ -404,22 +423,3 @@ export default class Knotess {
         return [frameR, frameS, frameT];
     }
 }
-
-vec3.direction = function (vec, vec2, dest) {
-    if (!dest) { dest = vec; }
-    let x = vec[0] - vec2[0],
-    y = vec[1] - vec2[1],
-    z = vec[2] - vec2[2],
-    len = Math.sqrt(x * x + y * y + z * z);
-    if (!len) {
-        dest[0] = 0;
-        dest[1] = 0;
-        dest[2] = 0;
-        return dest;
-    }
-    len = 1 / len;
-    dest[0] = x * len;
-    dest[1] = y * len;
-    dest[2] = z * len;
-    return dest;
-};
