@@ -9,7 +9,11 @@
     <style>
         body { margin: 0; overflow: hidden; }
         canvas { touch-action: none; width: 100%; height: 100%; }
-        div.demo_frame { width: 100%; height: 100%; }
+        div.demo_frame {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(#ffffff, #a5a7b5);
+        }
         div.demo_frame > span {
             display: block;
             font-family: sans-serif;
@@ -21,7 +25,7 @@
         }
         #uparrow, #dnarrow {
             color: #b9b9b9;
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            text-shadow: -1px -1px 0 #777, 1px -1px 0 #777, -1px 1px 0 #777, 1px 1px 0 #777;
             display: block;
             position: absolute;
             text-align: center;
@@ -40,7 +44,6 @@
             left: 20px;
             top: 20px;
         }
-        a:hover i { color: #8af; }
     </style>
 </head>
 <body>

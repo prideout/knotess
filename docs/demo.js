@@ -74,7 +74,7 @@ class App {
     }
 
     navigateTo(linkid) {
-        // Remove old renderable (if any)
+        // Hide old renderables (if any)
         const meshes = this.renderables[this.linkid];
         if (meshes) {
             for (const mesh of meshes) {
@@ -131,30 +131,22 @@ class App {
             }
         }
 
-        const engine = this.engine = Filament.Engine.create(canvas);
+        const engine = this.engine = Filament.Engine.create(canvas, {
+            alpha: true,
+            antialias: true,
+            depth: true,
+            premultipliedAlpha: false
+        });
         this.scene = engine.createScene();
 
         const material_package = Filament.Buffer(Filament.assets['plastic.filamat']);
         const mat = engine.createMaterial(material_package);
         const mats = this.materials = [
             mat.createInstance(), mat.createInstance(), mat.createInstance()];
-
         const colors = [[0.5, 0.75, 1], [0.9, 1, 0.9], [1, 0.75, 0.5]];
-
-        mats[0].setColorParameter("baseColor", Filament.RgbType.sRGB, colors[0]);
-        mats[0].setFloatParameter("roughness", 0.1);
-        mats[0].setFloatParameter("clearCoat", 1.0);
-        mats[0].setFloatParameter("clearCoatRoughness", 0.3);
-
-        mats[1].setColorParameter("baseColor", Filament.RgbType.sRGB, colors[1]);
-        mats[1].setFloatParameter("roughness", 0.5);
-        mats[1].setFloatParameter("clearCoat", 1.0);
-        mats[1].setFloatParameter("clearCoatRoughness", 0.3);
-
-        mats[2].setColorParameter("baseColor", Filament.RgbType.sRGB, colors[2]);
-        mats[2].setFloatParameter("roughness", 0.5);
-        mats[2].setFloatParameter("clearCoat", 1.0);
-        mats[2].setFloatParameter("clearCoatRoughness", 0.3);
+        mats[0].setColorParameter("baseColor", Filament.RgbType.LINEAR, colors[0]);
+        mats[1].setColorParameter("baseColor", Filament.RgbType.LINEAR, colors[1]);
+        mats[2].setColorParameter("baseColor", Filament.RgbType.LINEAR, colors[2]);
 
         this.renderables = {};
         if (document.location.hash.length > 1) {
@@ -182,29 +174,17 @@ class App {
             }
           });
 
-        const sunlight = Filament.EntityManager.get().create();
-        this.scene.addEntity(sunlight);
-
-        Filament.LightManager.Builder(LightType.SUN)
-        .color([0.98, 0.92, 0.89])
-        .intensity(20000.0)
-        .direction([0.6, -1.0, -0.8])
-        .castShadows(true)
-        .sunAngularRadius(1.9)
-        .sunHaloSize(10.0)
-        .sunHaloFalloff(80.0)
-        .build(engine, sunlight);
-
         const ibldata = Filament.assets['pillars_2k_ibl.ktx'];
         const indirectLight = engine.createIblFromKtx(ibldata, {'rgbm': true});
-        indirectLight.setIntensity(20000);
+        indirectLight.setIntensity(30000);
         this.scene.setIndirectLight(indirectLight);
 
         this.swapChain = engine.createSwapChain();
         this.renderer = engine.createRenderer();
         this.camera = engine.createCamera();
         this.view = engine.createView();
-        this.view.setClearColor([1,1,1,1]);
+        this.view.setPostProcessingEnabled(false);
+        this.view.setClearColor([1,1,1,0]);
         this.view.setCamera(this.camera);
         this.view.setScene(this.scene);
         this.resize();
