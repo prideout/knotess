@@ -31,6 +31,48 @@ class App {
         return this.LinearRolfsen[Math.min(upper, index + 1)];
     }
 
+    clone(mesh, translation) {
+        mesh = {
+            vertices: new Float32Array(mesh.vertices),
+            triangles: mesh.triangles,
+        };
+        const nverts = mesh.vertices.length / 6;
+        for (let i = 0; i < nverts; i++) {
+            mesh.vertices[i * 6 + 0] += translation[0];
+            mesh.vertices[i * 6 + 1] += translation[1];
+            mesh.vertices[i * 6 + 2] += translation[2];
+        }
+        return mesh;
+    }
+
+    tessellate(linkid) {
+        const options = {
+            polygonSides: 30,
+            radius: 0.07
+        };
+        const meshes = this.knots.tessellate(linkid, options);
+        if (meshes.length == 0) {
+            if (linkid == "0.1") {
+                const mesh = this.knots.tessellate("2.2.1", options)[0];
+                return [this.clone(mesh, [0.5, -0.25, 0])];
+            }
+            if (linkid == "0.2.1") {
+                const mesh = this.knots.tessellate("2.2.1", options)[0];
+                return [
+                    this.clone(mesh, [0, 0, 0]),
+                    this.clone(mesh, [0.5, 0, 0])];
+            }
+            if (linkid == "0.3.1") {
+                const mesh = this.knots.tessellate("2.2.1", options)[0];
+                return [
+                    this.clone(mesh, [0, 0, 0]),
+                    this.clone(mesh, [0.5, 0, 0]),
+                    this.clone(mesh, [1.0, 0, 0])];
+            }
+        }
+        return meshes;
+    }
+
     navigateTo(linkid) {
         // Remove old renderable (if any)
         const meshes = this.renderables[this.linkid];
@@ -43,10 +85,7 @@ class App {
         // Create new renderables if they are not in the cache.
         let renderables = this.renderables[linkid];
         if (!renderables) {
-            const meshes = this.knots.tessellate(linkid, {
-                polygonSides: 30,
-                radius: 0.07
-            });
+            const meshes = this.tessellate(linkid);
             renderables = this.renderables[linkid] = [];
             const M = 1.5, minpt = [-M, -M, -M], maxpt = [M, M, M];
             const bounds = [minpt, maxpt];
@@ -61,7 +100,7 @@ class App {
         for (const renderable of renderables) {
             this.scene.addEntity(renderable);
         }
-        // Update the URL hash and label.
+        // Update various DOM elements.
         const label = document.getElementById('label');
         const comps = linkid.split('.');
         if (comps.length == 3) {
@@ -69,8 +108,14 @@ class App {
         } else {
             label.innerHTML = `${comps[0]}<sub>${comps[1]}</sub>`;
         }
-        document.getElementById('uparrow').href = '#' + this.getPreviousLinkId(linkid);
-        document.getElementById('dnarrow').href = '#' + this.getNextLinkId(linkid);
+        const uparrow = document.getElementById('uparrow');
+        const dnarrow = document.getElementById('dnarrow');
+        const previd = this.getPreviousLinkId(linkid);
+        const nextid = this.getNextLinkId(linkid);
+        uparrow.href = '#' + previd;
+        dnarrow.href = '#' + nextid;
+        uparrow.style = linkid == previd ? "display:none" : "display:inline";
+        dnarrow.style = linkid == nextid ? "display:none" : "display:inline";
     }
 
     constructor(canvas) {
@@ -112,7 +157,11 @@ class App {
         mats[2].setFloatParameter("clearCoatRoughness", 0.3);
 
         this.renderables = {};
-        this.linkid = "7.2.3";
+        if (document.location.hash.length > 1) {
+            this.linkid = document.location.hash.substr(1);
+        } else {
+            this.linkid = "8.3.5";
+        }
         this.navigateTo(this.linkid);
         document.location.hash = this.linkid;
         window.onhashchange = this.onHashChange.bind(this);
@@ -121,11 +170,15 @@ class App {
             const keyName = event.key;
             if (keyName == 'ArrowUp') {
                 const el = document.getElementById('uparrow');
-                this.navigateTo(el.hash.substr(1));
+                const linkid = el.hash.substr(1);
+                this.navigateTo(linkid);
+                document.location.hash = linkid;
             }
             if (keyName == 'ArrowDown') {
                 const el = document.getElementById('dnarrow');
-                this.navigateTo(el.hash.substr(1));
+                const linkid = el.hash.substr(1);
+                this.navigateTo(linkid);
+                document.location.hash = linkid;
             }
           });
 
@@ -207,7 +260,7 @@ class App {
     }
 
     render() {
-        const eye = [0, 0, 4], center = [0, 0, 0], up = [0, 1, 0];
+        const eye = [0, 0, 5], center = [0, 0, 0], up = [0, 1, 0];
         this.camera.lookAt(eye, center, up);
         const radians = Date.now() / 1000;
         const transform = mat4.fromRotation(mat4.create(), radians, [0, 1, 0]);
