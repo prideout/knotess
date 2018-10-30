@@ -45,12 +45,17 @@ class App {
 
         this.renderables = {};
 
-        const meshes = this.knots.tessellate("7.2.3", {
+        const linkid = "7.2.3";
+        const el = document.getElementById('label')
+        const comps = linkid.split('.');
+        el.innerHTML = comps[0] + "<sup>" + comps[1] + "</sup><sub>" + comps[2] + "</sub>";
+
+        const meshes = this.knots.tessellate(linkid, {
             polygonSides: 30,
             radius: 0.07
         });
 
-        const renderables = this.renderables["7.2.3"] = [];
+        const renderables = this.renderables[linkid] = [];
         const M = 1.5, minpt = [-M, -M, -M], maxpt = [M, M, M];
         const bounds = [minpt, maxpt];
         let i = 0;
