@@ -1,6 +1,7 @@
 Filament.loadMathExtensions();
 
 const CENTERLINES = '//unpkg.com/knotess@1.0.1/centerlines.bin';
+const DEFAULT_LINK = '8.3.5';
 
 Filament.init([ CENTERLINES, 'plastic.filamat', 'pillars_2k_ibl.ktx' ], () => {
     const canvas = document.getElementsByTagName('canvas')[0];
@@ -16,7 +17,10 @@ Filament.init([ CENTERLINES, 'plastic.filamat', 'pillars_2k_ibl.ktx' ], () => {
 class App {
 
     onHashChange() {
-        const linkid = document.location.hash.substr(1);
+        let linkid = document.location.hash.substr(1);
+        if (linkid.length == 0) {
+            linkid = DEFAULT_LINK;
+        }
         this.navigateTo(linkid);
     }
 
@@ -69,8 +73,8 @@ class App {
         const nextid = this.knots.getNextLinkId(linkid);
         uparrow.href = '#' + previd;
         dnarrow.href = '#' + nextid;
-        uparrow.style.display = linkid == previd ? "none" : "block";
-        dnarrow.style.display = linkid == nextid ? "none" : "block";
+        uparrow.style.display = linkid == previd ? 'none' : 'block';
+        dnarrow.style.display = linkid == nextid ? 'none' : 'block';
     }
 
     constructor(canvas) {
@@ -91,18 +95,17 @@ class App {
         const mats = this.materials = [
             mat.createInstance(), mat.createInstance(), mat.createInstance()];
         const colors = [[0.5, 0.75, 1], [0.9, 1, 0.9], [1, 0.75, 0.5]];
-        mats[0].setColorParameter("baseColor", Filament.RgbType.LINEAR, colors[0]);
-        mats[1].setColorParameter("baseColor", Filament.RgbType.LINEAR, colors[1]);
-        mats[2].setColorParameter("baseColor", Filament.RgbType.LINEAR, colors[2]);
+        mats[0].setColorParameter('baseColor', Filament.RgbType.LINEAR, colors[0]);
+        mats[1].setColorParameter('baseColor', Filament.RgbType.LINEAR, colors[1]);
+        mats[2].setColorParameter('baseColor', Filament.RgbType.LINEAR, colors[2]);
 
         this.renderables = {};
         if (document.location.hash.length > 1) {
             this.linkid = document.location.hash.substr(1);
         } else {
-            this.linkid = "8.3.5";
+            this.linkid = DEFAULT_LINK;
         }
         this.navigateTo(this.linkid);
-        document.location.hash = this.linkid;
         window.onhashchange = this.onHashChange.bind(this);
 
         document.addEventListener('keydown', (event) => {
@@ -137,7 +140,7 @@ class App {
         this.resize();
         this.render = this.render.bind(this);
         this.resize = this.resize.bind(this);
-        window.addEventListener("resize", this.resize);
+        window.addEventListener('resize', this.resize);
         window.requestAnimationFrame(this.render);
     }
 
