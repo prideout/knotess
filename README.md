@@ -30,11 +30,11 @@ Install with NPM (`npm install knotess`) or Yarn (`yarn add knotess`), then:
 import Knotess from 'knotess';
 ```
 
-Or use a browser build directly as follows. Note the external dependency on [glMatrix].
+Or use a browser build directly as follows.
 
 ```html
-<script src="//unpkg.com/gl-matrix@2.8.1/dist/gl-matrix-min.js"></script>
-<script src="//unpkg.com/knotess@1.0.0/knotess.js"></script>
+<script src="//unpkg.com/knotess@1.1.1/knotess.min.js"></script> <!-- minified build -->
+<script src="//unpkg.com/knotess@1.1.1/knotess.js"></script> <!-- dev build -->
 ```
 
 ## API Reference

@@ -9,7 +9,7 @@ const config = (file, plugins) => ({
         format: 'umd',
         file
     },
-    plugins: [ resolve() ]
+    plugins: [ resolve(), terser() ]
 });
 
 const bubleConfig = {transforms: {dangerousForOf: true}};
