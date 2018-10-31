@@ -4,8 +4,8 @@
 
 This library generates triangle meshes for all the [prime knots] in the Rolfsen table.
 
-Knotess consumes a compact binary file that provides XYZ positions for bézier control points, then
-produces tube shapes by sweeping a polygon along the bézier curve.
+At run time, knotess consumes a compact binary file ([centerlines.bin]) containing bézier control
+points. It then generates triangle meshes by sweeping a polygon along the bézier curves.
 
 - [Interactive Demo](https://prideout.net/knotess)
 
@@ -30,7 +30,7 @@ Install with NPM (`npm install knotess`) or Yarn (`yarn add knotess`), then:
 import Knotess from 'knotess';
 ```
 
-Or use a browser build directly as follows.
+Or use one of the following two CDN builds.
 
 ```html
 <script src="//unpkg.com/knotess@1.1.1/knotess.min.js"></script> <!-- minified build -->
@@ -65,3 +65,4 @@ space-delimited list of Alexander-Briggs-Rolfsen identifiers.
 [badge]: https://travis-ci.org/prideout/knotess.svg?branch=master "Build Status"
 [prime knots]: https://en.wikipedia.org/wiki/List_of_prime_knots
 [glMatrix]: http://glmatrix.net
+[centerlines.bin]: https://github.com/prideout/knotess/blob/master/centerlines.bin
