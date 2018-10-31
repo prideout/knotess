@@ -1,26 +1,17 @@
-Filament.loadMathExtensions();
-
 const CENTERLINES = '//unpkg.com/knotess@1.0.1/centerlines.bin';
 const DEFAULT_LINK = '8.3.5';
 
 Filament.init([ CENTERLINES, 'plastic.filamat', 'pillars_2k_ibl.ktx' ], () => {
-    const canvas = document.getElementsByTagName('canvas')[0];
     window.VertexAttribute = Filament.VertexAttribute;
     window.AttributeType = Filament.VertexBuffer$AttributeType;
-    window.PrimitiveType = Filament.RenderableManager$PrimitiveType;
-    window.IndexType = Filament.IndexBuffer$IndexType;
     window.Fov = Filament.Camera$Fov;
-    window.LightType = Filament.LightManager$Type;
-    window.app = new App(canvas);
+    window.app = new App(document.getElementsByTagName('canvas')[0]);
 });
 
 class App {
 
     onHashChange() {
         let linkid = document.location.hash.substr(1);
-        if (linkid.length == 0) {
-            linkid = DEFAULT_LINK;
-        }
         this.navigateTo(linkid);
     }
 
@@ -34,6 +25,9 @@ class App {
     }
 
     navigateTo(linkid) {
+        if (linkid.length == 0) {
+            linkid = DEFAULT_LINK;
+        }
         // Hide old renderables (if any)
         const meshes = this.renderables[this.linkid];
         if (meshes) {
@@ -90,8 +84,7 @@ class App {
         });
         this.scene = engine.createScene();
 
-        const material_package = Filament.Buffer(Filament.assets['plastic.filamat']);
-        const mat = engine.createMaterial(material_package);
+        const mat = engine.createMaterial('plastic.filamat');
         const mats = this.materials = [
             mat.createInstance(), mat.createInstance(), mat.createInstance()];
         const colors = [[0.5, 0.75, 1], [0.9, 1, 0.9], [1, 0.75, 0.5]];
@@ -100,11 +93,7 @@ class App {
         mats[2].setColorParameter('baseColor', Filament.RgbType.LINEAR, colors[2]);
 
         this.renderables = {};
-        if (document.location.hash.length > 1) {
-            this.linkid = document.location.hash.substr(1);
-        } else {
-            this.linkid = DEFAULT_LINK;
-        }
+        this.linkid = document.location.hash.substr(1);
         this.navigateTo(this.linkid);
         window.onhashchange = this.onHashChange.bind(this);
 
@@ -124,8 +113,7 @@ class App {
             }
           });
 
-        const ibldata = Filament.assets['pillars_2k_ibl.ktx'];
-        const indirectLight = engine.createIblFromKtx(ibldata, {'rgbm': true});
+        const indirectLight = engine.createIblFromKtx('pillars_2k_ibl.ktx');
         indirectLight.setIntensity(30000);
         this.scene.setIndirectLight(indirectLight);
 
@@ -161,7 +149,7 @@ class App {
 
         const ib = Filament.IndexBuffer.Builder()
             .indexCount(triangles.length)
-            .bufferType(IndexType.USHORT)
+            .bufferType(Filament.IndexBuffer$IndexType.USHORT)
             .build(engine);
 
         vb.setBufferAt(engine, 0, Filament.Buffer(vertices));
@@ -171,7 +159,7 @@ class App {
         Filament.RenderableManager.Builder(1)
             .boundingBox(bounds)
             .material(0, matinstance)
-            .geometry(0, PrimitiveType.TRIANGLES, vb, ib)
+            .geometry(0, Filament.RenderableManager$PrimitiveType.TRIANGLES, vb, ib)
             .build(engine, renderable);
 
         return renderable;

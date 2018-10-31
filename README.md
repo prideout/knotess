@@ -7,7 +7,8 @@ This library generates triangle meshes for all the [prime knots] in the Rolfsen 
 At run time, knotess consumes a compact binary file ([centerlines.bin]) containing bézier control
 points. It then generates triangle meshes by sweeping a polygon along the bézier curves.
 
-- [Interactive Demo](https://prideout.net/knotess) using [Filament](https://github.com/google/filament) and WebGL 2.0
+- [Interactive Demo] using [Filament] and WebGL 2.0
+- The demo [source code] is a single JS file.
 
 ## Example
 
@@ -66,3 +67,6 @@ space-delimited list of Alexander-Briggs-Rolfsen identifiers.
 [prime knots]: https://en.wikipedia.org/wiki/List_of_prime_knots
 [glMatrix]: http://glmatrix.net
 [centerlines.bin]: https://github.com/prideout/knotess/blob/master/centerlines.bin
+[Interactive Demo]: https://prideout.net/knotess
+[Filament]: https://github.com/google/filament
+[source code]: https://github.com/prideout/knotess/blob/master/docs/demo.js
