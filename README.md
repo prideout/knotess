@@ -1,4 +1,4 @@
-<h1>Knotess<img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Blue_Figure-Eight_Knot.png" align="right" width="128"></h1>
+<h1>Knotess<img src="https://prideout.net/knotess/card.png" align="right" width="128"></h1>
 
 [![badge]](https://travis-ci.org/prideout/knotess)
 
@@ -7,7 +7,7 @@ This library generates triangle meshes for all the [prime knots] in the Rolfsen 
 At run time, knotess consumes a compact binary file ([centerlines.bin]) containing bézier control
 points. It then generates triangle meshes by sweeping a polygon along the bézier curves.
 
-- [Interactive Demo](https://prideout.net/knotess)
+- [Interactive Demo](https://prideout.net/knotess) using [Filament](https://github.com/google/filament) and WebGL 2.0
 
 ## Example
 
