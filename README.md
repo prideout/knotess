@@ -34,8 +34,8 @@ import Knotess from 'knotess';
 Or use one of the following two CDN builds.
 
 ```html
-<script src="//unpkg.com/knotess@1.1.1/knotess.min.js"></script> <!-- minified build -->
-<script src="//unpkg.com/knotess@1.1.1/knotess.js"></script> <!-- dev build -->
+<script src="//unpkg.com/knotess@1.1.2/knotess.min.js"></script> <!-- minified build -->
+<script src="//unpkg.com/knotess@1.1.2/knotess.js"></script> <!-- dev build -->
 ```
 
 ## API Reference

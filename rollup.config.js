@@ -9,12 +9,12 @@ const config = (file, plugins) => ({
         format: 'umd',
         file
     },
-    plugins: [ resolve(), terser() ]
+    plugins
 });
 
 const bubleConfig = {transforms: {dangerousForOf: true}};
 
 export default [
-    config('knotess.js', [buble(bubleConfig)]),
-    config('knotess.min.js', [terser(), buble(bubleConfig)])
+    config('knotess.js', [resolve(), buble(bubleConfig)]),
+    config('knotess.min.js', [resolve(), terser(), buble(bubleConfig)])
 ];
