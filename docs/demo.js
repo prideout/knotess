@@ -73,7 +73,6 @@ class App {
 
     constructor(canvas) {
         this.canvas = canvas;
-        this.renderables = {};
         this.knots = new Knotess(Filament.assets[CENTERLINES].buffer);
 
         const engine = this.engine = Filament.Engine.create(canvas, {
@@ -93,8 +92,7 @@ class App {
         mats[2].setColorParameter('baseColor', Filament.RgbType.LINEAR, colors[2]);
 
         this.renderables = {};
-        this.linkid = document.location.hash.substr(1);
-        this.navigateTo(this.linkid);
+        this.navigateTo(document.location.hash.substr(1));
         window.onhashchange = this.onHashChange.bind(this);
 
         document.addEventListener('keydown', (event) => {
@@ -152,9 +150,9 @@ class App {
             .bufferType(Filament.IndexBuffer$IndexType.USHORT)
             .build(engine);
 
-        vb.setBufferAt(engine, 0, Filament.Buffer(vertices));
-        vb.setBufferAt(engine, 1, Filament.Buffer(tangents));
-        ib.setBuffer(engine, Filament.Buffer(triangles));
+        vb.setBufferAt(engine, 0, vertices);
+        vb.setBufferAt(engine, 1, tangents);
+        ib.setBuffer(engine, triangles);
 
         Filament.RenderableManager.Builder(1)
             .boundingBox(bounds)
@@ -173,7 +171,9 @@ class App {
         const tcm = this.engine.getTransformManager();
         for (let key in this.renderables) {
             for (let renderable of this.renderables[key]) {
-                tcm.setTransform(tcm.getInstance(renderable), transform);
+                const inst = tcm.getInstance(renderable);
+                tcm.setTransform(inst, transform);
+                inst.delete();
             }
         }
         this.renderer.render(this.swapChain, this.view);
@@ -181,7 +181,6 @@ class App {
     }
 
     resize() {
-        let el;
         const dpr = window.devicePixelRatio;
         const width = this.canvas.width = this.canvas.clientWidth * dpr;
         const height = this.canvas.height = this.canvas.clientHeight * dpr;
@@ -197,7 +196,7 @@ class App {
 
         if (width > height) {
             // Morph into left arrow
-            el = document.getElementById('uparrow');
+            let el = document.getElementById('uparrow');
             el.style['margin'] = 'auto auto auto 5px';
             el.style['text-align'] = 'left';
             position(el, 0, 'auto', 0, 5);
@@ -214,7 +213,7 @@ class App {
             el.classList.add('fa-chevron-right');
         } else {
             // Morph into up arrow
-            el = document.getElementById('uparrow');
+            let el = document.getElementById('uparrow');
             el.style['margin'] = '0px auto auto auto';
             el.style['text-align'] = 'center';
             position(el, 0, 0, 'auto', 0);
